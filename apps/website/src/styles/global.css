@@ -1037,12 +1037,22 @@ h2 span {
   font-size: 10px;
   padding: 13px 15px;
 }
-.download-card > small {
+.download-card > small,
+.release-asset > small {
   display: block;
   color: var(--muted);
   font-size: 8px;
   line-height: 1.7;
   margin-top: 16px;
+  overflow-wrap: anywhere;
+}
+.release-asset + .release-asset {
+  margin-top: 26px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.release-asset .download-status {
+  margin-top: 12px;
 }
 .release-asset label {
   font-size: 8px;

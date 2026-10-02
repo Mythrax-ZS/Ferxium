@@ -5,8 +5,8 @@ import { sourceArchive } from '../data/site';
 ---
 
 <Layout
-  title="Getting started — build, run, understand"
-  description="Build the FerXium Rust service, CLI, Tauri desktop app, and Astro website. Learn how local scanning, signed signatures, and quarantine work."
+  title="Getting started — install, build, understand"
+  description="Install FerXium preview packages or build its Rust service and Tauri desktop from source. Learn how local scanning and quarantine work."
 >
   <section class="page-hero container">
     <span class="eyebrow cyan">A LITTLE CONTEXT GOES A LONG WAY.</span>
@@ -15,10 +15,11 @@ import { sourceArchive } from '../data/site';
       <br />
       <span>protection toolkit.</span>
     </h1>
-    <p>Build it. Run it. Understand what it’s doing.</p>
+    <p>Install it. Run it. Understand what it’s doing.</p>
   </section>
   <div class="container docs-layout">
     <nav class="docs-nav" aria-label="Documentation contents">
+      <a href="#install">Install a preview</a>
       <a href="#build">Build from source</a>
       <a href="#windows">Windows</a>
       <a href="#macos">macOS</a>
@@ -29,6 +30,29 @@ import { sourceArchive } from '../data/site';
       <a href="#contribute">Contribute</a>
     </nav>
     <article class="prose">
+      <section id="install">
+        <h2>Install a preview</h2>
+        <p>
+          Choose your platform on the <a href="/download/">download page</a> and compare the
+          package’s SHA-256 checksum before opening it. These evaluation packages include the
+          desktop, YARA-enabled service, and CLI. They have no publisher certificate; macOS builds
+          are not notarized. The signature database contains examples, so keep your current
+          antivirus while evaluating.
+        </p>
+        <p>
+          Windows: run the x64 setup as your normal user. The installer handles the WebView2
+          prerequisite. macOS: choose Apple silicon or Intel, open the DMG, and copy FerXium.app to
+          Applications. Gatekeeper may block this unsigned publisher preview.
+        </p>
+        <p>Linux: on Ubuntu 24.04 or newer, install the downloaded Debian package:</p>
+        <pre><code>sudo apt install ./FerXium-0.1.0-linux-x86_64.deb</code></pre>
+        <p>
+          Open FerXium from your application menu as your regular user. The desktop starts its
+          bundled service automatically. Closing the desktop leaves monitoring active. Stop
+          ferxium-service before updating or uninstalling; startup at login is optional and requires
+          the per-user templates supplied in the repository.
+        </p>
+      </section>
       <section id="build">
         <h2>Build from source</h2>
         <p>
@@ -80,9 +104,9 @@ npm run tauri -- build</code></pre>
       <section id="run">
         <h2>Run the protection service</h2>
         <p>
-          Start the service in one terminal, then launch the desktop app in another. The desktop
-          bridge discovers a private, authenticated loopback endpoint. There is no remote service or
-          cloud account.
+          For development, start the service in one terminal, then launch the desktop app in
+          another. The desktop bridge discovers a private, authenticated loopback endpoint. There is
+          no remote service or cloud account.
         </p>
         <pre><code>cargo run -p ferxium-service
 # In a second terminal:
@@ -118,8 +142,8 @@ cargo run -p ferxium-cli -- status</code></pre>
         <p>
           Memory scanning, archive unpacking, privileged execution blocking, comprehensive
           connection attribution, and a production signature corpus are future work. Interrupted
-          quarantine staging and watcher queue overflows are reported for review. The source preview
-          has not undergone an independent security audit.
+          quarantine staging and watcher queue overflows are reported for review. The preview has
+          not undergone an independent security audit.
         </p>
       </section>
       <section id="contribute">

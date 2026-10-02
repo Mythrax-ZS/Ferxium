@@ -2,14 +2,20 @@
 
 The marketing website is static. Build on a development machine and upload only
 `apps/website/dist`, never the entire working tree. Credentials, development
-state, native build artifacts, and environment files do not belong in a web root.
+state, build intermediates, and environment files do not belong in a web root.
+Only verified release packages and their checksums belong in its downloads folder.
 
 ```powershell
 $env:SITE_URL = 'https://ferxium.org'
 $env:PUBLIC_SOURCE_ARCHIVE_URL = '/downloads/ferxium-0.1.0-source.zip'
-# Set PUBLIC_REPOSITORY_URL only when a real public repository exists.
+$env:PUBLIC_REPOSITORY_URL = 'https://github.com/Mythrax-ZS/Ferxium'
+# Download all native release artifacts to one directory, then verify the manifest.
+python scripts/import-release.py artifacts/native-release
 npm run build -w @ferxium/website
 python scripts/package-source.py apps/website/dist/downloads
+Get-ChildItem artifacts/native-release -File | Where-Object {
+  $_.Name -match '\.(exe|deb|dmg)(\.sha256)?$'
+} | Copy-Item -Destination apps/website/dist/downloads
 ```
 
 The source package includes the Rust crates, desktop and website sources, rules,
@@ -36,8 +42,8 @@ ownership, readable files and traversable directories for Caddy, without grantin
 the web process write access. Switch `/var/www/ferxium.org/current` using an atomic
 symlink replacement only after validating the release contents. Keep previous
 releases for rollback. Check the homepage, all six pages, missing-page status,
-source checksum, HTTPS certificate, HTTP redirect, and www redirect after publishing.
+source and native package checksums, HTTPS certificate, HTTP redirect, and www redirect after publishing.
 
 Do not enable access logging or third-party analytics for this site. Configure a
-real public repository URL when ready; until then, the deployed site links to the
+real public repository URL when deploying; the documentation also links to the
 downloadable source ZIP.

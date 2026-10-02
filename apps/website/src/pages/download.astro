@@ -22,7 +22,7 @@ const platforms = [
     name: 'Linux',
     icon: 'linux',
     description: 'Ubuntu 24.04+ · Debian package · x64',
-    command: 'sha256sum FerXium.AppImage',
+    command: 'sha256sum FerXium.deb',
   },
 ];
 ---
@@ -62,8 +62,7 @@ const platforms = [
               <div class="release-asset">
                 <a class="button primary" href={asset.url}>
                   <Icon name="download" size={17} />
-                  Download {platform.name} (
-                  {asset.architecture === 'aarch64' ? 'Apple silicon' : 'x64'})
+                  {`Download ${platform.name} (${asset.architecture === 'aarch64' ? 'Apple silicon' : platform.id === 'macos' ? 'Intel' : 'x64'})`}
                 </a>
                 <small>{asset.name}</small>
                 {!asset.signed && (

@@ -42,6 +42,13 @@ test('website exposes honest downloads and working FAQ/navigation on a phone', a
     (platform) => !release.assets.some((asset) => asset.platform === platform),
   );
   await expect(page.getByText('Native build not published yet')).toHaveCount(pending.length);
+  for (const asset of release.assets) {
+    await expect(page.locator(`.download-card a[href="${asset.url}"]`)).toHaveCount(1);
+    await expect(page.getByText(asset.sha256, { exact: true })).toBeVisible();
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
   const windows = release.assets.find((asset) => asset.platform === 'windows');
   if (windows) {
     await expect(page.getByRole('link', { name: 'Download Windows (x64)' })).toHaveAttribute(

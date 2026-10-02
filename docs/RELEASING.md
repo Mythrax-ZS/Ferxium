@@ -6,7 +6,7 @@ Complete independent security review, realistic false-positive and detection tes
 
 Resolve or independently assess the platform dependency warnings in [DEPENDENCY_REVIEW.md](DEPENDENCY_REVIEW.md), including the Linux desktop glib iterator unsoundness advisory. A passing cargo audit exit code includes informational warnings; do not describe it as an audit finding no issues.
 
-Configure a real GitHub repository, enable private vulnerability reporting, set `SITE_URL`/`PUBLIC_REPOSITORY_URL`, and replace template destinations. CI produces build artifacts for evaluation; it does not publish an audited signed release or install a service automatically.
+The repository is https://github.com/Mythrax-ZS/Ferxium. Enable private vulnerability reporting and set `SITE_URL`/`PUBLIC_REPOSITORY_URL` when building the website. Native release CI publishes evaluation packages on version tags; it does not establish an audited or publisher-signed release. Packages include a service started as the current user by the desktop, without automatic OS startup registration.
 
 ## Build and sign
 
@@ -37,19 +37,25 @@ For key rotation, stop the service, preserve an authenticated backup of the old 
 
 ## Website release assets
 
-After signing and verifying installers, add their exact HTTPS URLs and computed SHA-256 values to `apps/website/src/data/releases.json`:
+Push a new `v*` tag to run `.github/workflows/release.yml`. It builds Windows x64 NSIS, Ubuntu 24.04 amd64 Debian, macOS Apple silicon DMG, and macOS Intel DMG packages on native runners. macOS packages receive ad-hoc integrity signatures and are checked from the mounted DMG, including a packaged service smoke test. All four jobs must pass before CI creates a GitHub prerelease with packages, checksum files, and platform metadata. Publisher signing remains a separate release milestone.
+
+Download each `release-*` artifact into one local folder, then run `python scripts/import-release.py DIRECTORY`. The script verifies the bytes against every metadata checksum before updating `apps/website/src/data/releases.json`. Build the site, copy those exact packages and checksum files into `apps/website/dist/downloads`, and deploy according to [DEPLOYMENT.md](DEPLOYMENT.md). Never substitute a separately rebuilt package for the one named in the manifest.
+
+The manifest records the exact HTTPS URL, signature status, package kind, and computed SHA-256 value for each asset:
 
 ```json
 {
   "version": "0.1.0",
-  "status": "source-preview",
+  "status": "preview",
   "assets": [
     {
       "platform": "windows",
       "architecture": "x86_64",
       "name": "ACTUAL-PUBLISHED-ASSET.exe",
       "url": "https://YOUR-REAL-RELEASE-HOST/ACTUAL-PUBLISHED-ASSET.exe",
-      "sha256": "REPLACE_WITH_THE_ACTUAL_64_CHARACTER_SHA256"
+      "sha256": "REPLACE_WITH_THE_ACTUAL_64_CHARACTER_SHA256",
+      "signed": false,
+      "kind": "installer"
     }
   ]
 }
