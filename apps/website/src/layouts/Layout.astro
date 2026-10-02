@@ -1,0 +1,172 @@
+---
+import '@fontsource-variable/inter';
+import '../styles/global.css';
+import Icon from '../components/Icon.astro';
+import { repository, sourceArchive, sourceLink } from '../data/site';
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const nav = [
+  ['Features', '/features/'],
+  ['Download', '/download/'],
+  ['Documentation', '/docs/'],
+  ['About', '/about/'],
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#0B1426" />
+    <meta name="description" content={description} />
+    <title>{title} | FerXium</title>
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/shield.svg" type="image/svg+xml" />
+    <meta property="og:title" content={`${title} | FerXium`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL('/og.svg', Astro.site)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script is:inline>
+      try {
+        if (localStorage.getItem('ferxium-theme') === 'light')
+          document.documentElement.dataset.theme = 'light';
+      } catch {}
+    </script>
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: 'FerXium',
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Windows, macOS, Linux',
+        softwareVersion: '0.1.0',
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        license: 'https://opensource.org/license/mit',
+        url: Astro.site?.href,
+      })}
+    />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">
+      Skip to content
+    </a>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="/" aria-label="FerXium home">
+          <Icon name="shield" size={30} />
+          <span>
+            Fer<strong>Xium</strong>
+          </span>
+        </a>
+        <button
+          id="menu-toggle"
+          class="mobile-menu"
+          aria-label="Toggle navigation"
+          aria-expanded="false"
+          aria-controls="site-nav"
+        >
+          ☰
+        </button>
+        <nav id="site-nav" aria-label="Main navigation">
+          {nav.map(([label, url]) => (
+            <a href={url} aria-current={Astro.url.pathname === url ? 'page' : undefined}>
+              {label}
+            </a>
+          ))}
+        </nav>
+        <div class="header-actions">
+          <button id="theme-toggle" class="theme-toggle" aria-label="Toggle light and dark mode">
+            <Icon name="sun" size={17} />
+          </button>
+          <a
+            href={sourceLink}
+            class="github-link"
+            aria-label={
+              repository
+                ? 'View FerXium on GitHub'
+                : sourceArchive
+                  ? 'Download FerXium source code'
+                  : 'Read source build instructions'
+            }
+          >
+            <Icon name="github" size={19} />
+          </a>
+          <a class="button primary small" href="/download/">
+            Get FerXium <Icon name="arrow" size={14} />
+          </a>
+        </div>
+      </div>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="site-footer container">
+      <div class="footer-top">
+        <div>
+          <a class="brand" href="/">
+            <Icon name="shield" size={28} />
+            <span>
+              Fer<strong>Xium</strong>
+            </span>
+          </a>
+          <p>
+            Protection should be a right.
+            <br />
+            Not a recurring payment.
+          </p>
+          <span class="footer-free">100% FREE. FOREVER.</span>
+        </div>
+        <div class="footer-links">
+          <div>
+            <h4>Protection</h4>
+            <a href="/features/">Features</a>
+            <a href="/download/#windows">Windows</a>
+            <a href="/download/#macos">macOS</a>
+            <a href="/download/#linux">Linux</a>
+          </div>
+          <div>
+            <h4>Resources</h4>
+            <a href="/docs/">Documentation</a>
+            <a href="/blog/">The journal</a>
+            <a href={sourceLink}>Source code</a>
+          </div>
+          <div>
+            <h4>The project</h4>
+            <a href="/about/">Our philosophy</a>
+            <a href="/about/#privacy">Privacy</a>
+            <a href="/docs/#contribute">Contribute</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© {new Date().getUTCFullYear()} FerXium contributors · MIT license</span>
+        <span>
+          <Icon name="lock" size={12} /> Zero telemetry. Zero upselling. Zero cost.
+        </span>
+      </div>
+    </footer>
+    <script>
+      document.getElementById('theme-toggle')?.addEventListener('click', () => {
+        const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+        document.documentElement.dataset.theme = next;
+        try {
+          localStorage.setItem('ferxium-theme', next);
+        } catch {}
+      });
+      document.getElementById('menu-toggle')?.addEventListener('click', () => {
+        const button = document.getElementById('menu-toggle');
+        const expanded = button?.getAttribute('aria-expanded') === 'true';
+        button?.setAttribute('aria-expanded', String(!expanded));
+        document.getElementById('site-nav')?.classList.toggle('is-open', !expanded);
+      });
+    </script>
+  </body>
+</html>

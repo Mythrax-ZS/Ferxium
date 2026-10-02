@@ -1,0 +1,56 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
+const posts = [
+  [
+    'ENGINEERING',
+    'Designing an antivirus around local trust',
+    'A planned look at the boundaries between the desktop, service, and filesystem.',
+  ],
+  [
+    'PRIVACY',
+    'A promise you can inspect',
+    'Why zero telemetry means keeping both the code and the defaults understandable.',
+  ],
+  [
+    'PROJECT NOTES',
+    'The road to our first public release',
+    'Release validation, platform coverage, and the work ahead.',
+  ],
+];
+---
+
+<Layout
+  title="The journal — notes from the project"
+  description="Upcoming FerXium engineering notes, privacy discussions, and release stories. Follow the development of a free Rust antivirus project."
+>
+  <section class="page-hero container">
+    <span class="eyebrow cyan">IDEAS. DECISIONS. WORK IN THE OPEN.</span>
+    <h1>
+      Behind the shield.
+      <br />
+      <span>The FerXium journal.</span>
+    </h1>
+    <p>Engineering notes and honest updates from the project.</p>
+  </section>
+  <section class="container blog-grid">
+    {posts.map(([category, title, text]) => (
+      <article class="blog-card">
+        <div class="blog-art">
+          <Icon name="shield" size={54} />
+        </div>
+        <span class="eyebrow cyan">{category}</span>
+        <h2>{title}</h2>
+        <p>{text}</p>
+        <span class="coming-soon">PLANNED ARTICLE · COMING SOON</span>
+      </article>
+    ))}
+  </section>
+  <div class="container journal-note">
+    <p>No mailing list. No tracking. New articles will appear here when published.</p>
+    <a class="text-link" href="/docs/#contribute">
+      Help shape the project
+      <Icon name="arrow" size={15} />
+    </a>
+  </div>
+</Layout>

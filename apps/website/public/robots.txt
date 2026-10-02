@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ferxium.org/sitemap-index.xml

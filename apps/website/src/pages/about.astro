@@ -1,0 +1,88 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
+import CTA from '../components/CTA.astro';
+---
+
+<Layout
+  title="Our philosophy — security belongs to everyone"
+  description="Why FerXium is free forever, why it is built in Rust, and how an open-source antivirus can put privacy, transparency, and user control first."
+>
+  <section class="page-hero container">
+    <span class="eyebrow cyan">A SIMPLE IDEA. A LASTING COMMITMENT.</span>
+    <h1>
+      Security should be a right.
+      <br />
+      <span>Not a subscription.</span>
+    </h1>
+    <p>
+      We’re building FerXium around that belief.
+      <br />
+      Open code. Honest coverage. You in control.
+    </p>
+  </section>
+  <article class="container prose about-prose">
+    <section>
+      <span class="feature-icon">
+        <Icon name="heart" size={25} />
+      </span>
+      <h2>Why free, forever?</h2>
+      <p>
+        Protecting a personal computer shouldn’t depend on a monthly bill. FerXium’s source is
+        MIT licensed. Every implemented feature belongs to the same free project. There are no
+        premium tiers, upgrade prompts, paid scanning quotas, or hidden trials.
+      </p>
+      <p>
+        Open-source licensing makes that promise tangible: you can inspect, modify, and distribute
+        the code under its license, regardless of the project’s future.
+      </p>
+    </section>
+    <section>
+      <span class="feature-icon">
+        <Icon name="code" size={25} />
+      </span>
+      <h2>Why Rust?</h2>
+      <p>
+        Security tools spend their lives reading untrusted inputs. Rust helps prevent many memory
+        safety mistakes in application code, while supporting predictable performance and clear
+        ownership boundaries. It doesn’t make an antivirus invulnerable; careful design, testing,
+        audits, and a strong threat corpus still matter.
+      </p>
+    </section>
+    <section id="privacy">
+      <span class="feature-icon">
+        <Icon name="lock" size={25} />
+      </span>
+      <h2>Privacy is the starting point.</h2>
+      <p>
+        The application has no analytics SDKs, telemetry, advertising, or sample uploads. Reports
+        and quarantine content stay in private per-user storage. Network traffic counters remain
+        local. Cloud lookup is unavailable and disabled in this release.
+      </p>
+      <p>
+        If you configure an update feed, the service contacts that HTTPS host to retrieve signed
+        signatures. The host sees the request and your IP address. It does not receive scanned file
+        paths, hashes, or contents. This website serves local fonts and assets and includes no
+        analytics scripts.
+      </p>
+    </section>
+    <section id="open-source">
+      <span class="feature-icon">
+        <Icon name="github" size={25} />
+      </span>
+      <h2>Transparency over promises.</h2>
+      <p>
+        The tagline is a statement of ambition. No security product can guarantee unbreakable
+        protection. This first source release implements real scanning and monitoring, with example
+        signatures and documented limitations. We’ll earn trust through clear release notes,
+        independent review, and measured improvements.
+      </p>
+      <p>
+        Public repository links and installer downloads are configured by the maintainer before
+        publishing. Until then, source-build instructions remain the honest path to trying the
+        project.
+      </p>
+    </section>
+  </article>
+  <CTA />
+</Layout>

@@ -1,0 +1,9 @@
+node_modules/
+target/
+artifacts/
+test-results/
+package-lock.json
+apps/*/dist/
+apps/website/.astro/
+apps/desktop/src-tauri/gen/
+apps/desktop/src-tauri/icons/

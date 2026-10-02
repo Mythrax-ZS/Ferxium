@@ -1,0 +1,111 @@
+---
+import Icon from './Icon.astro';
+---
+
+<div
+  class="product-preview"
+  aria-label="Illustrative FerXium desktop interface, not live protection status"
+>
+  <div class="preview-top">
+    <span class="window-dots">
+      <i></i>
+      <i></i>
+      <i></i>
+    </span>
+    <span>
+      <Icon name="shield" size={12} /> FerXium
+    </span>
+    <span class="preview-local">● LOCAL-FIRST</span>
+  </div>
+  <div class="preview-body">
+    <aside>
+      <div class="preview-brand">
+        <Icon name="shield" size={20} /> FerXium
+      </div>
+      <div class="preview-nav active">
+        <Icon size={14} /> Dashboard
+      </div>
+      <div class="preview-nav">
+        <Icon name="scan" size={14} /> Scans
+      </div>
+      <div class="preview-nav">
+        <Icon name="lock" size={14} /> Quarantine
+      </div>
+      <div class="preview-nav">
+        <Icon name="cpu" size={14} /> Settings
+      </div>
+      <div class="preview-privacy">
+        <Icon name="lock" size={12} /> Your privacy. Always.
+      </div>
+    </aside>
+    <div class="preview-main">
+      <div class="preview-title">
+        <div>
+          <span>YOUR DEVICE. YOUR PEACE OF MIND.</span>
+          <h3>Protection at a glance</h3>
+        </div>
+        <span class="preview-free">100% FREE</span>
+      </div>
+      <div class="preview-hero">
+        <div>
+          <span class="cyan">● FILE MONITORING ACTIVE</span>
+          <h4>
+            Watching over
+            <br />
+            your digital world.
+          </h4>
+          <p>Your files stay yours. Your data stays here.</p>
+          <span class="preview-button">
+            <Icon name="zap" size={12} /> Run quick scan →
+          </span>
+        </div>
+        <div class="preview-shield">
+          <Icon name="shield" size={104} />
+          <Icon name="check" size={38} />
+        </div>
+      </div>
+      <div class="preview-stats">
+        <div>
+          <span>Files checked</span>
+          <strong>128,492</strong>
+          <small>● Local scans</small>
+        </div>
+        <div>
+          <span>Last scan</span>
+          <strong>Today, 09:41</strong>
+          <small>● 18,429 files checked</small>
+        </div>
+        <div>
+          <span>Awaiting review</span>
+          <strong>00</strong>
+          <small>● No pending detections</small>
+        </div>
+      </div>
+      <div class="preview-bottom">
+        <div>
+          <h5>Protection layers</h5>
+          <p>
+            <Icon name="check" size={12} />
+            Real-time file monitoring
+          </p>
+          <p>
+            <Icon name="check" size={12} />
+            SHA-256 + YARA signatures
+          </p>
+        </div>
+        <div>
+          <h5>Recent activity</h5>
+          <p>
+            <Icon name="check" size={12} />
+            Quick scan complete
+          </p>
+          <p>
+            <Icon name="check" size={12} />
+            Signature database ready
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <span class="preview-caption">ILLUSTRATIVE PRODUCT PREVIEW</span>
+</div>

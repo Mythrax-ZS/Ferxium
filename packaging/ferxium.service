@@ -1,0 +1,16 @@
+[Unit]
+Description=FerXium per-user file monitoring
+After=default.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/ferxium-service
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+UMask=0077
+# Filesystem access is intentionally user-scoped. ProtectSystem/ProtectHome
+# cannot deny paths selected by the user; harden with a reviewed policy later.
+
+[Install]
+WantedBy=default.target

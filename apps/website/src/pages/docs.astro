@@ -1,0 +1,144 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
+import { sourceArchive } from '../data/site';
+---
+
+<Layout
+  title="Getting started — build, run, understand"
+  description="Build the FerXium Rust service, CLI, Tauri desktop app, and Astro website. Learn how local scanning, signed signatures, and quarantine work."
+>
+  <section class="page-hero container">
+    <span class="eyebrow cyan">A LITTLE CONTEXT GOES A LONG WAY.</span>
+    <h1>
+      Meet your
+      <br />
+      <span>protection toolkit.</span>
+    </h1>
+    <p>Build it. Run it. Understand what it’s doing.</p>
+  </section>
+  <div class="container docs-layout">
+    <nav class="docs-nav" aria-label="Documentation contents">
+      <a href="#build">Build from source</a>
+      <a href="#windows">Windows</a>
+      <a href="#macos">macOS</a>
+      <a href="#linux">Linux</a>
+      <a href="#run">Run the service</a>
+      <a href="#scanning">Your first scan</a>
+      <a href="#coverage">Coverage & permissions</a>
+      <a href="#contribute">Contribute</a>
+    </nav>
+    <article class="prose">
+      <section id="build">
+        <h2>Build from source</h2>
+        <p>
+          Install current stable Rust and Node.js 22.12 or newer. Obtain the source, open its root
+          folder, then install the frontend packages and build the service.
+        </p>
+        {sourceArchive && (
+          <p>
+            <a href={sourceArchive}>Download the complete source ZIP</a> and its{' '}
+            <a href={`${sourceArchive}.sha256`}>SHA-256 checksum</a>, then extract the archive.
+          </p>
+        )}
+        <pre><code>npm ci
+cargo build --release -p ferxium-service -p ferxium-cli
+npm run build
+npm run tauri -- build</code></pre>
+        <p>
+          The default Rust engine includes hashes and heuristics. Enable native YARA with{' '}
+          <code>--features yara-engine</code> for the service and CLI. See the repository build
+          guide for native dependencies.
+        </p>
+      </section>
+      <section id="windows">
+        <h2>Windows</h2>
+        <p>
+          Install Visual Studio Build Tools with the Desktop development with C++ workload, the
+          Windows SDK, and the WebView2 runtime. Run the service as your regular Windows user.
+          Installer signing is a release step, not a requirement for local builds.
+        </p>
+      </section>
+      <section id="macos">
+        <h2>macOS</h2>
+        <p>
+          Install Xcode Command Line Tools with <code>xcode-select --install</code>. macOS may ask
+          for access to protected folders you select. Full Disk Access is optional and broadens file
+          access; grant it only when you need that coverage.
+        </p>
+      </section>
+      <section id="linux">
+        <h2>Linux</h2>
+        <p>On Debian/Ubuntu, install the desktop dependencies before building Tauri:</p>
+        <pre><code>sudo apt-get install build-essential pkg-config libwebkit2gtk-4.1-dev \
+  libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev</code></pre>
+        <p>
+          Native YARA builds also need C build tools; see the repository guide. File watching is
+          subject to inotify limits and filesystem support.
+        </p>
+      </section>
+      <section id="run">
+        <h2>Run the protection service</h2>
+        <p>
+          Start the service in one terminal, then launch the desktop app in another. The desktop
+          bridge discovers a private, authenticated loopback endpoint. There is no remote service or
+          cloud account.
+        </p>
+        <pre><code>cargo run -p ferxium-service
+# In a second terminal:
+npm run tauri -- dev</code></pre>
+        <p>
+          The desktop app never starts an elevated daemon. Per-user startup templates are included
+          in the repository for systemd, launchd, and Windows Task Scheduler.
+        </p>
+      </section>
+      <section id="scanning">
+        <h2>Your first scan</h2>
+        <p>
+          Open Scans and choose Quick, Full, or Custom. Review file counts, skips, read errors, and
+          potential detections. A clean result applies only to the files actually checked with the
+          current signatures.
+        </p>
+        <p>For a headless check:</p>
+        <pre><code>cargo run -p ferxium-cli -- scan /absolute/path/to/folder
+cargo run -p ferxium-cli -- status</code></pre>
+        <p>
+          The scan command exits with 0 for no detections, 1 for detections, and 2 for read errors.
+          Quarantine and restore are explicit desktop actions. Restoration never overwrites an
+          existing destination.
+        </p>
+      </section>
+      <section id="coverage">
+        <h2>Coverage & permissions</h2>
+        <p>
+          The service runs with your user’s file permissions. It watches selected roots and samples
+          running executable paths. It observes file changes after they happen and provides local
+          network traffic counters.
+        </p>
+        <p>
+          Memory scanning, archive unpacking, privileged execution blocking, comprehensive
+          connection attribution, and a production signature corpus are future work. Interrupted
+          quarantine staging and watcher queue overflows are reported for review. The source preview
+          has not undergone an independent security audit.
+        </p>
+      </section>
+      <section id="contribute">
+        <h2>Contribute something useful</h2>
+        <p>
+          Start with the repository’s contribution guide and roadmap. Reproduce issues using
+          harmless fixtures. Do not upload live malware to public issues. Security-sensitive
+          findings belong in the private advisory workflow configured by the project maintainer.
+        </p>
+        <pre><code>cargo fmt --all --check
+cargo clippy --all-targets -- -D warnings
+cargo test
+npm run check
+npm run build</code></pre>
+        <a class="text-link" href="/about/">
+          Read our philosophy
+          <Icon name="arrow" size={15} />
+        </a>
+      </section>
+    </article>
+  </div>
+</Layout>

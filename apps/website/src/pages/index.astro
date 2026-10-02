@@ -1,0 +1,310 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
+import Preview from '../components/Preview.astro';
+import CTA from '../components/CTA.astro';
+import { repository, sourceLink } from '../data/site';
+const features = [
+  {
+    icon: 'zap',
+    title: 'Quietly on guard.',
+    text: 'Native file monitoring scans created and modified files in the folders you choose. Less friction. More control.',
+  },
+  {
+    icon: 'scan',
+    title: 'A scan for every situation.',
+    text: 'A quick check, a thorough sweep, or a folder you want to double-check. Pause and resume on your terms.',
+  },
+  {
+    icon: 'lock',
+    title: 'Your data stays yours.',
+    text: 'Local-first detection. No telemetry. No accounts. No samples sent anywhere. Privacy comes as standard.',
+  },
+  {
+    icon: 'code',
+    title: 'Built in Rust. Built to last.',
+    text: 'A modular engine with bounded reads and memory-safe application code. Open to inspection and improvement.',
+  },
+  {
+    icon: 'shield',
+    title: 'Threats under your control.',
+    text: 'Clear detection reports, encrypted quarantine, and deliberate restore actions. You make the call.',
+  },
+  {
+    icon: 'heart',
+    title: 'Free means free.',
+    text: 'No trials. No premium tier. No upgrade prompts waiting around the corner. The whole project is yours.',
+  },
+];
+const faqs = [
+  [
+    'Is FerXium really free forever?',
+    'Yes. The source code is MIT licensed. There are no paid editions, subscriptions, upgrade prompts, or limits created to sell you a higher tier.',
+  ],
+  [
+    'Does it collect my data?',
+    'The application has no telemetry, analytics, or sample uploads. Signature updates contact only the feed you explicitly configure. This static website includes no analytics or tracking scripts.',
+  ],
+  [
+    'Can I replace my current antivirus today?',
+    'This is an early preview with example signatures, not independently certified endpoint protection. Keep your existing protection while testing FerXium. See the documentation for exact coverage.',
+  ],
+  [
+    'What does real-time monitoring cover?',
+    'Created and modified files in selected folders, plus sampled running executable files. Native watchers observe changes after they occur; this release does not block file access or execution.',
+  ],
+  [
+    'What about Windows, macOS, and Linux?',
+    'The source targets all three platforms. CI builds check each platform. Signed public installers will appear on the download page when release validation is complete.',
+  ],
+  [
+    'How can I help?',
+    'Test harmless fixtures, improve signatures, review the security model, polish accessibility, or help with platform adapters. Start with the contribution guide.',
+  ],
+];
+---
+
+<Layout
+  title="Free protection. Your privacy. Your control."
+  description="Meet FerXium: a free, open-source antivirus project built in Rust. Local-first scanning, encrypted quarantine, and zero telemetry. Windows, macOS, and Linux."
+>
+  <section class="home-hero container">
+    <div class="hero-aura"></div>
+    <a href="/about/" class="announcement">
+      <span class="dot"></span>INDEPENDENT. OPEN SOURCE. ALWAYS FREE.
+      <Icon name="arrow" size={13} />
+    </a>
+    <h1>
+      Your digital world.
+      <br />
+      <span>A little more protected.</span>
+    </h1>
+    <p>
+      Powerful protection should belong to everyone.
+      <br />
+      Meet FerXium. Built in Rust. Built around you. Free forever.
+    </p>
+    <div class="hero-buttons">
+      <a href="/download/#windows" class="button primary">
+        <Icon name="windows" size={18} />
+        Download for Windows
+        <Icon name="arrow" size={16} />
+      </a>
+      <a href={sourceLink} class="button secondary">
+        <Icon name="github" size={18} />
+        {repository ? 'Explore on GitHub' : 'Explore the source'}
+      </a>
+    </div>
+    <div class="hero-platforms">
+      Also for{' '}
+      <a href="/download/#macos">
+        <Icon name="apple" size={13} />
+        macOS
+      </a>
+      <span>·</span>
+      <a href="/download/#linux">
+        <Icon name="linux" size={13} />
+        Linux
+      </a>
+      <span class="hero-divider">|</span>
+      <span>No account. No credit card. Ever.</span>
+    </div>
+    <Preview />
+    <div class="hero-footnote">
+      <span>
+        <Icon name="check" size={13} />
+        100% free forever
+      </span>
+      <span>
+        <Icon name="lock" size={13} />
+        Zero telemetry
+      </span>
+      <span>
+        <Icon name="code" size={13} />
+        Open source
+      </span>
+      <a
+        class="stars-badge"
+        href={sourceLink}
+        title="GitHub stars placeholder; configure the repository before publishing"
+      >
+        <Icon name="star" size={12} />
+        GitHub stars <b>—</b>
+      </a>
+    </div>
+    <p class="preview-disclosure">
+      Source preview · Example signatures · Keep existing endpoint protection while evaluating.
+    </p>
+  </section>
+  <section class="section container">
+    <div class="section-heading">
+      <span class="eyebrow cyan">LESS NOISE. MORE PEACE OF MIND.</span>
+      <h2>
+        Everything protection should be.
+        <br />
+        <span>Nothing it shouldn’t.</span>
+      </h2>
+      <p>
+        No clutter. No fear tactics. Just thoughtful tools
+        <br />
+        to help you keep your digital life in your hands.
+      </p>
+    </div>
+    <div class="feature-grid">
+      {features.map((f) => (
+        <article class="feature-card">
+          <span class="feature-icon">
+            <Icon name={f.icon} size={24} />
+          </span>
+          <h3>{f.title}</h3>
+          <p>{f.text}</p>
+          <a href="/features/">
+            Explore feature
+            <Icon name="arrow" size={13} />
+          </a>
+        </article>
+      ))}
+    </div>
+  </section>
+  <section class="philosophy-section">
+    <div class="container philosophy-content">
+      <div class="philosophy-art" aria-hidden="true">
+        <div class="philosophy-ring"></div>
+        <Icon name="shield" size={170} />
+        <Icon name="check" size={62} />
+        <span>ZERO TELEMETRY</span>
+      </div>
+      <div>
+        <span class="eyebrow cyan">A DIFFERENT KIND OF SECURITY PROJECT.</span>
+        <h2>
+          You’re the user.
+          <br />
+          <span>Never the product.</span>
+        </h2>
+        <p>
+          Your antivirus shouldn’t need your browsing habits, your email address, or your credit
+          card. FerXium keeps scanning local and puts its code out in the open.
+        </p>
+        <div class="privacy-points">
+          <span>
+            <Icon name="check" size={16} />
+            No analytics hiding in the background
+          </span>
+          <span>
+            <Icon name="check" size={16} />
+            No premium features held out of reach
+          </span>
+          <span>
+            <Icon name="check" size={16} />
+            No files uploaded without your knowledge
+          </span>
+        </div>
+        <a href="/about/#privacy" class="text-link">
+          Read our privacy commitment
+          <Icon name="arrow" size={16} />
+        </a>
+      </div>
+    </div>
+  </section>
+  <section class="section container comparison-section">
+    <div class="section-heading">
+      <span class="eyebrow cyan">THE WHOLE PROJECT. NO FINE PRINT.</span>
+      <h2>Protection without the baggage.</h2>
+      <p>A clear philosophy. A different set of priorities.</p>
+    </div>
+    <div class="comparison-table">
+      <table>
+        <caption>
+          Project philosophy comparison. Commercial products vary; this is not a detection
+          benchmark.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">What matters</th>
+            <th scope="col">
+              <Icon name="shield" size={17} />
+              FerXium
+            </th>
+            <th scope="col">Some commercial AV offerings</th>
+          </tr>
+        </thead>
+        <tbody>
+          {[
+            ['Cost', '100% free, forever', 'Subscriptions or upgrade tiers'],
+            ['Privacy', 'Zero application telemetry', 'Data collection varies by vendor'],
+            ['Source code', 'Open and auditable', 'Often proprietary'],
+            ['Upgrade prompts', 'None', 'May include paid upgrade offers'],
+            [
+              'Scanning model',
+              'Local-first; example signatures today',
+              'Established engines and threat feeds',
+            ],
+            ['Independent validation', 'Not yet certified', 'Certification varies by product'],
+          ].map(([name, a, b]) => (
+            <tr>
+              <th scope="row">{name}</th>
+              <td>
+                <Icon name="check" size={14} />
+                {a}
+              </td>
+              <td>{b}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="section container testimonials">
+    <div class="section-heading">
+      <span class="eyebrow cyan">BUILT FOR PEOPLE, BY PEOPLE.</span>
+      <h2>A community starts here.</h2>
+      <p>Illustrative feedback placeholders. Real user stories will follow public testing.</p>
+    </div>
+    <div class="quote-grid">
+      {[
+        [
+          '“The kind of security app I’d want to understand, not just install.”',
+          'A privacy-minded user',
+        ],
+        [
+          '“Clear tools, readable code, and room to contribute. That’s a promising start.”',
+          'An open-source contributor',
+        ],
+        [
+          '“No pop-ups asking me to upgrade? That’s the experience I’m looking for.”',
+          'An everyday computer user',
+        ],
+      ].map(([quote, person]) => (
+        <blockquote>
+          <span class="placeholder-label">EXAMPLE · NOT A REAL ENDORSEMENT</span>
+          <p>{quote}</p>
+          <footer>
+            <span class="quote-avatar">FX</span>
+            <span>
+              {person}
+              <small>Illustrative testimonial</small>
+            </span>
+          </footer>
+        </blockquote>
+      ))}
+    </div>
+  </section>
+  <section class="section container faq-section">
+    <div class="section-heading">
+      <span class="eyebrow cyan">GOOD QUESTIONS. STRAIGHT ANSWERS.</span>
+      <h2>A few things you might wonder.</h2>
+    </div>
+    <div class="faq-list">
+      {faqs.map(([q, a]) => (
+        <details>
+          <summary>
+            {q}
+            <span>+</span>
+          </summary>
+          <p>{a}</p>
+        </details>
+      ))}
+    </div>
+  </section>
+  <CTA />
+</Layout>

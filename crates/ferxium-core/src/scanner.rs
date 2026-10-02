@@ -1,0 +1,269 @@
+use crate::{
+    Config, FileOutcome, Finding, ScanKind, ScanRequest, Severity, Threat, config::valid_hash,
+    storage::open_regular, yara_engine::YaraEngine,
+};
+use anyhow::{Result, ensure};
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::{
+    collections::HashMap,
+    io::Read,
+    path::{Path, PathBuf},
+};
+use uuid::Uuid;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HashSignature {
+    pub sha256: String,
+    pub name: String,
+    pub severity: Severity,
+    pub description: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SignatureDatabase {
+    pub version: u64,
+    pub published_at: DateTime<Utc>,
+    pub signatures: Vec<HashSignature>,
+}
+
+impl SignatureDatabase {
+    pub fn parse(bytes: &[u8]) -> Result<Self> {
+        ensure!(
+            bytes.len() <= 4 * 1024 * 1024,
+            "Signature database too large"
+        );
+        let database: Self = serde_json::from_slice(bytes)?;
+        ensure!(
+            database.version > 0 && database.signatures.len() <= 20_000,
+            "Invalid database version or size"
+        );
+        for sig in &database.signatures {
+            ensure!(
+                valid_hash(&sig.sha256)
+                    && !sig.name.is_empty()
+                    && sig.name.len() <= 200
+                    && sig.description.len() <= 2000,
+                "Invalid signature"
+            );
+        }
+        Ok(database)
+    }
+}
+
+pub struct Scanner {
+    signatures: HashMap<String, HashSignature>,
+    pub version: u64,
+    yara: YaraEngine,
+}
+
+impl Scanner {
+    pub fn new(database: SignatureDatabase, rules: &str) -> Result<Self> {
+        Ok(Self {
+            version: database.version,
+            signatures: database
+                .signatures
+                .into_iter()
+                .map(|s| (s.sha256.clone(), s))
+                .collect(),
+            yara: YaraEngine::new(rules)?,
+        })
+    }
+    pub fn bundled() -> Result<Self> {
+        Self::new(
+            SignatureDatabase::parse(crate::BUNDLED_DATABASE.as_bytes())?,
+            crate::BUNDLED_RULES,
+        )
+    }
+    pub fn yara_enabled(&self) -> bool {
+        self.yara.enabled()
+    }
+
+    pub fn scan_file(&self, path: &Path, config: &Config) -> Result<FileOutcome> {
+        if config.excludes(path) {
+            return Ok(FileOutcome::Skipped {
+                reason: "Excluded path".into(),
+            });
+        }
+        let file = open_regular(path)?;
+        if file.metadata()?.len() > config.max_file_bytes {
+            return Ok(FileOutcome::Skipped {
+                reason: "File exceeds configured limit".into(),
+            });
+        }
+        let mut bytes = Vec::new();
+        file.take(config.max_file_bytes + 1)
+            .read_to_end(&mut bytes)?;
+        if bytes.len() as u64 > config.max_file_bytes {
+            return Ok(FileOutcome::Skipped {
+                reason: "File grew beyond limit".into(),
+            });
+        }
+        let hash = hex::encode(Sha256::digest(&bytes));
+        if config.allowed_hashes.contains(&hash) {
+            return Ok(FileOutcome::Skipped {
+                reason: "Allowed SHA-256".into(),
+            });
+        }
+        let mut findings = vec![];
+        if let Some(sig) = self.signatures.get(&hash) {
+            findings.push(Finding {
+                name: sig.name.clone(),
+                method: "sha256".into(),
+                severity: sig.severity,
+                explanation: sig.description.clone(),
+            });
+        }
+        // EICAR matching also covers the standard test string with a trailing newline.
+        let eicar = [
+            b"X5O!P%@AP[4\\PZX54(P^)7CC)7}".as_slice(),
+            b"$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*",
+        ]
+        .concat();
+        if bytes.windows(eicar.len()).any(|w| w == eicar) && findings.is_empty() {
+            findings.push(Finding {
+                name: "EICAR-Test-File".into(),
+                method: "test_signature".into(),
+                severity: Severity::High,
+                explanation: "Harmless antivirus test string; not real malware.".into(),
+            });
+        }
+        findings.extend(self.yara.scan(&bytes)?);
+        if config.heuristics_enabled {
+            findings.extend(heuristics(path, &bytes));
+        }
+        if findings.is_empty() {
+            Ok(FileOutcome::Clean {
+                sha256: hash,
+                size: bytes.len() as u64,
+            })
+        } else {
+            Ok(FileOutcome::Detected {
+                threat: Threat {
+                    id: Uuid::new_v4(),
+                    path: path.to_path_buf(),
+                    sha256: hash,
+                    size: bytes.len() as u64,
+                    detected_at: Utc::now(),
+                    findings,
+                    status: "pending".into(),
+                },
+            })
+        }
+    }
+}
+
+fn heuristics(path: &Path, bytes: &[u8]) -> Vec<Finding> {
+    let extension = path
+        .extension()
+        .and_then(|s| s.to_str())
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    if !["ps1", "bat", "cmd", "vbs", "js", "sh"].contains(&extension.as_str())
+        || bytes.len() > 1024 * 1024
+    {
+        return vec![];
+    }
+    let text = String::from_utf8_lossy(bytes).to_ascii_lowercase();
+    let download = text.contains("downloadstring") || text.contains("invoke-webrequest");
+    let execute = text.contains("invoke-expression") || text.contains("iex ");
+    if download
+        && execute
+        && (text.contains("-encodedcommand")
+            || text.contains("frombase64string")
+            || text.contains("-executionpolicy bypass"))
+    {
+        vec![Finding { name: "Suspicious.Script.DownloadExecute".into(), method: "heuristic".into(), severity: Severity::Medium, explanation: "Script combines network download, dynamic execution, and obfuscation/bypass. This is a review signal, not proof of malware.".into() }]
+    } else {
+        vec![]
+    }
+}
+
+pub fn scan_roots(request: &ScanRequest) -> Result<Vec<PathBuf>> {
+    let roots = match request.kind {
+        ScanKind::Custom => {
+            ensure!(
+                !request.paths.is_empty() && request.paths.len() <= 32,
+                "Select 1–32 absolute paths"
+            );
+            request.paths.clone()
+        }
+        ScanKind::Full => {
+            #[cfg(windows)]
+            {
+                sysinfo::Disks::new_with_refreshed_list()
+                    .iter()
+                    .map(|d| d.mount_point().to_path_buf())
+                    .collect()
+            }
+            #[cfg(not(windows))]
+            {
+                vec![PathBuf::from("/")]
+            }
+        }
+        ScanKind::Quick => quick_roots(),
+    };
+    let mut unique = vec![];
+    for root in roots {
+        ensure!(root.is_absolute(), "Scan paths must be absolute");
+        ensure!(
+            !std::fs::symlink_metadata(&root)?.file_type().is_symlink(),
+            "Symlink roots are not allowed"
+        );
+        let p = root.canonicalize()?;
+        if !unique.iter().any(|r: &PathBuf| p.starts_with(r)) {
+            unique.retain(|r| !r.starts_with(&p));
+            unique.push(p);
+        }
+    }
+    ensure!(!unique.is_empty(), "No accessible scan locations");
+    Ok(unique)
+}
+
+pub fn quick_roots() -> Vec<PathBuf> {
+    let mut paths = vec![];
+    if let Some(user) = directories::UserDirs::new() {
+        let h = user.home_dir();
+        paths.extend([h.join("Downloads"), h.join("Desktop")]);
+        #[cfg(windows)]
+        paths.extend([
+            h.join("AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup"),
+            h.join("AppData/Local/Google/Chrome/User Data/Default/Extensions"),
+            h.join("AppData/Roaming/Mozilla/Firefox/Profiles"),
+        ]);
+        #[cfg(target_os = "linux")]
+        paths.extend([
+            h.join(".config/autostart"),
+            h.join(".config/google-chrome/Default/Extensions"),
+            h.join(".mozilla/firefox"),
+        ]);
+        #[cfg(target_os = "macos")]
+        paths.extend([
+            h.join("Library/LaunchAgents"),
+            h.join("Library/Application Support/Google/Chrome/Default/Extensions"),
+            h.join("Library/Application Support/Firefox/Profiles"),
+        ]);
+    }
+    #[cfg(windows)]
+    {
+        if let Some(w) = std::env::var_os("WINDIR") {
+            paths.push(PathBuf::from(w).join("Temp"));
+        }
+    }
+    #[cfg(not(windows))]
+    paths.extend([PathBuf::from("/tmp"), PathBuf::from("/etc/cron.d")]);
+    // Scan running executable files, not process address spaces. Memory scanning
+    // needs a separate least-privilege platform adapter and is not claimed here.
+    let mut system = sysinfo::System::new();
+    system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+    paths.extend(
+        system
+            .processes()
+            .values()
+            .filter_map(|p| p.exe().map(Path::to_path_buf)),
+    );
+    paths.into_iter().filter(|p| p.exists()).collect()
+}

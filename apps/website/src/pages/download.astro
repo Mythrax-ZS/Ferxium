@@ -1,0 +1,138 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
+import { assets, sourceLink, version, releaseStatus } from '../data/site';
+const platforms = [
+  {
+    id: 'windows',
+    name: 'Windows',
+    icon: 'windows',
+    description: 'Windows 10/11 · WebView2 · x64',
+    command: 'Get-FileHash .\\FerXium-installer.exe -Algorithm SHA256',
+  },
+  {
+    id: 'macos',
+    name: 'macOS',
+    icon: 'apple',
+    description: 'macOS 11+ · Apple silicon and Intel',
+    command: 'shasum -a 256 FerXium.dmg',
+  },
+  {
+    id: 'linux',
+    name: 'Linux',
+    icon: 'linux',
+    description: 'Ubuntu 24.04+ · Debian package · x64',
+    command: 'sha256sum FerXium.AppImage',
+  },
+];
+---
+
+<Layout
+  title="Download — free forever, on your platform"
+  description="Download FerXium preview builds and source code. Verify native Windows, macOS, and Linux packages with published SHA-256 checksums."
+>
+  <section class="page-hero container">
+    <span class="eyebrow cyan">100% FREE. ALL THREE PLATFORMS.</span>
+    <h1>
+      Your device.
+      <br />
+      <span>Your FerXium.</span>
+    </h1>
+    <p>
+      No account. No trial period. No payment details.
+      <br />
+      Just an open-source project you can make your own.
+    </p>
+    <span class="release-pill">
+      v{version} · {releaseStatus === 'source-preview' ? 'SOURCE PREVIEW' : 'PREVIEW BUILDS'}
+    </span>
+  </section>
+  <section class="container download-grid">
+    {platforms.map((platform) => (
+      <article class="download-card" id={platform.id}>
+        <span class="platform-icon">
+          <Icon name={platform.icon} size={42} />
+        </span>
+        <h2>{platform.name}</h2>
+        <p>{platform.description}</p>
+        {assets.filter((a) => a.platform === platform.id).length ? (
+          assets
+            .filter((a) => a.platform === platform.id)
+            .map((asset) => (
+              <div class="release-asset">
+                <a class="button primary" href={asset.url}>
+                  <Icon name="download" size={17} />
+                  Download {platform.name} (
+                  {asset.architecture === 'aarch64' ? 'Apple silicon' : 'x64'})
+                </a>
+                <small>{asset.name}</small>
+                {!asset.signed && (
+                  <span class="download-status">
+                    {platform.id === 'macos' ? 'Preview · not notarized' : 'Unsigned preview'}
+                  </span>
+                )}
+                <label>
+                  SHA-256<code>{asset.sha256}</code>
+                </label>
+              </div>
+            ))
+        ) : (
+          <>
+            <span class="download-status">Native build not published yet</span>
+            <a class="button primary" href={`/docs/#${platform.id}`}>
+              <Icon name="code" size={16} />
+              Build for {platform.name}
+              <Icon name="arrow" size={15} />
+            </a>
+            <small>Checksums appear with real release assets.</small>
+          </>
+        )}
+      </article>
+    ))}
+  </section>
+  <div class="container download-notice">
+    <Icon name="shield" size={24} />
+    <p>
+      <strong>Preview builds for evaluation.</strong> Packages include the desktop, protection
+      service, and CLI. Opening the installed app starts the service as your normal user. The
+      bundled signatures are examples; keep your current antivirus while evaluating. Preview builds
+      have no publisher certificate. macOS builds are not notarized.
+    </p>
+  </div>
+  <section class="section container prose verify-section">
+    <span class="eyebrow cyan">TRUST, THEN VERIFY.</span>
+    <h2>Verify every download.</h2>
+    <p>
+      Compare the hash printed by your platform’s command with the SHA-256 value attached to the
+      exact release asset. Also verify the platform code signature where available. A checksum by
+      itself does not establish who published a file.
+    </p>
+    {platforms.map((p) => (
+      <div>
+        <h3>{p.name}</h3>
+        {assets.filter((a) => a.platform === p.id).length ? (
+          assets
+            .filter((a) => a.platform === p.id)
+            .map(
+              (
+                asset,
+              ) => <pre><code>{p.id === 'windows' ? `Get-FileHash .\\${asset.name} -Algorithm SHA256` : p.id === 'macos' ? `shasum -a 256 ${asset.name}` : `sha256sum ${asset.name}`}</code></pre>,
+            )
+        ) : (
+          <pre><code>{p.command}</code></pre>
+        )}
+      </div>
+    ))}
+    <p>
+      Commands use the published filename for each available build. Commands for unpublished
+      platforms are examples. Check the checksum displayed beside your exact download.
+    </p>
+    <a href={sourceLink} class="text-link">
+      Explore the source
+      <Icon name="arrow" size={15} />
+    </a>
+    <span class="download-counter">
+      Downloads: — <small>Counter placeholder · no tracking installed</small>
+    </span>
+  </section>
+</Layout>

@@ -1,0 +1,113 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
+import CTA from '../components/CTA.astro';
+const sections = [
+  {
+    icon: 'zap',
+    title: 'Real-time awareness.',
+    label: 'STAY IN THE LOOP',
+    text: 'Native filesystem watchers scan created and modified files in your selected folders. A bounded, debounced queue keeps bursts manageable and makes dropped events visible.',
+    items: [
+      'inotify on Linux, ReadDirectoryChangesW on Windows, FSEvents on macOS',
+      'Sampled process creation awareness through running executable scans',
+      'Local interface traffic counters; no network blocking',
+      'Explicit coverage status and configurable exclusions',
+    ],
+  },
+  {
+    icon: 'scan',
+    title: 'A scan that fits your day.',
+    label: 'QUICK. FULL. YOUR CHOICE.',
+    text: 'Choose a focused check, sweep accessible volumes, or scan selected folders. Streamed enumeration avoids retaining an entire filesystem inventory in memory.',
+    items: [
+      'Quick: running executables, startup folders, downloads, common browser extensions',
+      'Full: accessible mounted volumes, with skipped files and errors reported',
+      'Custom: folders and drives selected through native dialogs',
+      'Pause, resume, cancel, throughput-based time estimate, and saved reports',
+    ],
+  },
+  {
+    icon: 'cpu',
+    title: 'A transparent detection engine.',
+    label: 'LOOK INSIDE',
+    text: 'A SHA-256 signature database pairs with optional YARA matching and conservative script heuristics. Detection details explain exactly what matched.',
+    items: [
+      'No file execution or sample uploads',
+      'Bounded reads, regular-file checks, and symlink avoidance',
+      'Ed25519-authenticated signature feed with replay protection',
+      'Bundled signatures are examples and harmless test detections',
+    ],
+  },
+  {
+    icon: 'lock',
+    title: 'Every action is your call.',
+    label: 'CONTROL COMES STANDARD',
+    text: 'Review a report, quarantine a detected file, allow an exact hash, or leave it pending. Quarantine encrypts backups and restoration refuses to overwrite existing files.',
+    items: [
+      'ChaCha20-Poly1305 authenticated encryption for quarantine content',
+      'Private per-user storage and local history',
+      'Source rehashing before removal; incomplete actions reported',
+      'Cloud lookup stays off; no provider is included',
+    ],
+  },
+];
+---
+
+<Layout
+  title="Features — thoughtful protection tools"
+  description="Explore FerXium file monitoring, quick and full scans, YARA integration, signed updates, encrypted quarantine, and its local-first privacy model."
+>
+  <section class="page-hero container">
+    <span class="eyebrow cyan">CAPABLE BY DESIGN. HONEST BY DEFAULT.</span>
+    <h1>
+      Protection, with
+      <br />
+      <span>you in control.</span>
+    </h1>
+    <p>
+      Focused tools. Clear signals. A transparent foundation
+      <br />
+      for a free, open-source security project.
+    </p>
+  </section>
+  <div class="container detail-features">
+    {sections.map((s, i) => (
+      <section class="detail-feature">
+        <div class="feature-number">
+          0{i + 1}
+          <span class="feature-icon">
+            <Icon name={s.icon} size={33} />
+          </span>
+        </div>
+        <div>
+          <span class="eyebrow cyan">{s.label}</span>
+          <h2>{s.title}</h2>
+          <p>{s.text}</p>
+          <ul>
+            {s.items.map((item) => (
+              <li>
+                <Icon name="check" size={17} />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    ))}
+  </div>
+  <section class="container coverage-note">
+    <h3>Know the current boundaries.</h3>
+    <p>
+      This release is a source preview. It does not scan process memory, unpack archives, intercept
+      kernel file access, block execution, or provide a production malware corpus. Watcher and
+      process sampling can miss activity. Keep existing protection while evaluating, and help us
+      harden the next release.
+    </p>
+    <a class="text-link" href="/docs/#coverage">
+      Read the coverage notes
+      <Icon name="arrow" size={15} />
+    </a>
+  </section>
+  <CTA />
+</Layout>

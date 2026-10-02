@@ -1,0 +1,21 @@
+{
+  "name": "ferxium",
+  "private": true,
+  "workspaces": [
+    "apps/desktop",
+    "apps/website"
+  ],
+  "scripts": {
+    "dev:desktop": "npm run dev -w @ferxium/desktop",
+    "dev:website": "npm run dev -w @ferxium/website",
+    "build": "npm run build --workspaces",
+    "check": "npm run check --workspaces",
+    "tauri": "npm exec --workspace @ferxium/desktop -- tauri",
+    "test:ui": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "prettier": "^3.9.9",
+    "prettier-plugin-astro": "^1.1.0"
+  }
+}

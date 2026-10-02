@@ -1,0 +1,45 @@
+[package]
+name = "ferxium-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Local-first detection and quarantine engine for FerXium"
+
+[features]
+default = []
+yara-engine = ["dep:yara"]
+
+[dependencies]
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+hex.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+reqwest.workspace = true
+tokio.workspace = true
+walkdir = "2"
+notify = "8"
+sysinfo = "0.37"
+directories = "6"
+chacha20poly1305 = "0.10"
+rand = "0.8"
+zeroize = "1"
+ed25519-dalek = "2"
+subtle = "2"
+fs2 = "0.4"
+yara = { version = "0.31", optional = true, features = ["vendored"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_Threading", "Win32_System_Memory"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[lints]
+workspace = true

@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "published_at": "2026-10-02T00:00:00Z",
+  "signatures": [
+    {"sha256": "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f", "name": "EICAR-Test-File", "severity": "high", "description": "Industry standard harmless antivirus test file, not real malware."}
+  ]
+}

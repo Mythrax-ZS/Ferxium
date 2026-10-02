@@ -1,0 +1,37 @@
+[package]
+name = "ferxium-service"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Authenticated per-user protection daemon for FerXium"
+
+[features]
+yara-engine = ["ferxium-core/yara-engine"]
+
+[dependencies]
+ferxium-core = { path = "../ferxium-core" }
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+clap.workspace = true
+axum = "0.8"
+walkdir = "2"
+sysinfo = "0.37"
+rand = "0.8"
+hex.workspace = true
+subtle = "2"
+fs2 = "0.4"
+netstat2 = "0.11"
+
+[dev-dependencies]
+tempfile = "3"
+tower = { version = "0.5", features = ["util"] }
+
+[lints]
+workspace = true
