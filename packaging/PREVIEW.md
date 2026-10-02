@@ -1,9 +1,12 @@
-# FerXium 0.1.0 preview builds
+# FerXium 0.1.1 preview builds
 
 These packages include the desktop, current-user protection service, and CLI.
 Opening the installed desktop starts the bundled service without administrator
 privileges. Close an earlier service instance before replacing an installation.
-Closing the desktop leaves monitoring active. The service does not run as root.
+Closing the window hides FerXium to the tray while monitoring stays active.
+Click its tray icon or choose Open FerXium to reopen it. Quit desktop from the
+tray menu exits the UI explicitly and leaves the protection service active.
+The service does not run as root.
 
 Windows: install the x64 setup as your regular user. WebView2 is required; the
 installer handles its runtime prerequisite. This preview has no Authenticode

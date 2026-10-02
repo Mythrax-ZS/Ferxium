@@ -65,7 +65,7 @@ In a second terminal:
 npm run tauri -- dev
 ```
 
-The service watches existing `Downloads` and `Desktop` folders by default. Configure additional absolute paths in Settings. Closing the desktop leaves the separately running service alone. Stop a foreground service with Ctrl+C.
+The service watches existing `Downloads` and `Desktop` folders by default. Configure additional absolute paths in Settings. Closing the main window hides FerXium to the system tray. Click the tray icon or choose **Open FerXium** to reopen it. Choose **Quit desktop (service stays active)** from the tray menu to exit the UI explicitly. Stop a foreground service with Ctrl+C.
 
 For browser previews (explicitly labeled illustrative demos):
 

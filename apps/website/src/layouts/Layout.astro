@@ -2,7 +2,7 @@
 import '@fontsource-variable/inter';
 import '../styles/global.css';
 import Icon from '../components/Icon.astro';
-import { repository, sourceArchive, sourceLink } from '../data/site';
+import { repository, sourceArchive, sourceLink, version } from '../data/site';
 interface Props {
   title: string;
   description: string;
@@ -47,7 +47,7 @@ const nav = [
         name: 'FerXium',
         applicationCategory: 'SecurityApplication',
         operatingSystem: 'Windows, macOS, Linux',
-        softwareVersion: '0.1.0',
+        softwareVersion: version,
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
         license: 'https://opensource.org/license/mit',
         url: Astro.site?.href,

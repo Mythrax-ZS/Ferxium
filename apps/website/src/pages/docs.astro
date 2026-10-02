@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Icon from '../components/Icon.astro';
-import { sourceArchive } from '../data/site';
+import { sourceArchive, version } from '../data/site';
 ---
 
 <Layout
@@ -45,12 +45,14 @@ import { sourceArchive } from '../data/site';
           Applications. Gatekeeper may block this unsigned publisher preview.
         </p>
         <p>Linux: on Ubuntu 24.04 or newer, install the downloaded Debian package:</p>
-        <pre><code>sudo apt install ./FerXium-0.1.0-linux-x86_64.deb</code></pre>
+        <pre><code>{`sudo apt install ./FerXium-${version}-linux-x86_64.deb`}</code></pre>
         <p>
           Open FerXium from your application menu as your regular user. The desktop starts its
-          bundled service automatically. Closing the desktop leaves monitoring active. Stop
-          ferxium-service before updating or uninstalling; startup at login is optional and requires
-          the per-user templates supplied in the repository.
+          bundled service automatically. Closing the window hides FerXium to the tray; click the
+          tray icon or choose Open FerXium to reopen it. Use Quit desktop in the tray menu to exit
+          the UI explicitly while monitoring stays active. Stop ferxium-service before updating or
+          uninstalling; startup at login is optional and requires the per-user templates supplied in
+          the repository.
         </p>
       </section>
       <section id="build">
