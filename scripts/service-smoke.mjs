@@ -25,6 +25,7 @@ const service = spawn(executable, ['--data-dir', state], {
   stdio: ['pipe', 'pipe', 'pipe'],
 });
 let stderr = '';
+let latestStatus;
 service.stderr.on('data', (data) => (stderr += data.toString()));
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 async function until(fn, seconds = 20) {
@@ -32,7 +33,20 @@ async function until(fn, seconds = 20) {
     if (await fn()) return;
     await wait(100);
   }
-  throw new Error(`Timed out. Service: ${stderr}`);
+  // Keep enough local diagnostics to investigate a missed native notification.
+  // Never print the discovery record or authorization token.
+  const diagnostics = latestStatus && {
+    version: latestStatus.version,
+    watcher_active: latestStatus.watcher_active,
+    yara_enabled: latestStatus.yara_enabled,
+    dropped_events: latestStatus.dropped_events,
+    scanned_total: latestStatus.scanned_total,
+    threats_found: latestStatus.threats.length,
+    activity: latestStatus.activity.slice(0, 10),
+  };
+  throw new Error(
+    `Timed out in isolated state ${root}. Service: ${stderr}. Status: ${JSON.stringify(diagnostics)}`,
+  );
 }
 try {
   let discovery;
@@ -52,7 +66,8 @@ try {
   const status = async () => {
     const response = await fetch(`${base}/status`, { headers });
     assert.equal(response.status, 200);
-    return response.json();
+    latestStatus = await response.json();
+    return latestStatus;
   };
   const action = async (body) => {
     const response = await fetch(`${base}/action`, {
@@ -72,6 +87,7 @@ try {
     403,
   );
   await until(async () => (await status()).watcher_active);
+  assert.equal(latestStatus.yara_enabled, true, 'The smoke test requires a YARA-enabled service');
   const marker = join(watched, 'harmless-marker.txt');
   await writeFile(marker, 'FERXIUM_TEST_SIGNATURE_v1');
   let threat;

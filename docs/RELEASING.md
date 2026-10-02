@@ -45,7 +45,7 @@ The manifest records the exact HTTPS URL, signature status, package kind, and co
 
 ```json
 {
-  "version": "0.1.0",
+  "version": "0.1.1",
   "status": "preview",
   "assets": [
     {
