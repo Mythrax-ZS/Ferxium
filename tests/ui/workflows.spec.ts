@@ -1,4 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+const release = JSON.parse(readFileSync('apps/website/src/data/releases.json', 'utf8')) as {
+  assets: Array<{ platform: string; url: string; sha256: string }>;
+};
 
 test('desktop demo scan pauses, resumes and cancels without host file access', async ({ page }) => {
   const errors: string[] = [];
@@ -34,10 +38,22 @@ test('website exposes honest downloads and working FAQ/navigation on a phone', a
     .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('link', { name: 'Download', exact: true })
     .click();
-  await expect(page.getByText('Signed installer not published yet')).toHaveCount(3);
-  await expect(page.getByRole('link', { name: 'Build for Windows' })).toBeVisible();
-  await page.getByRole('link', { name: 'Build for Windows' }).click();
-  await expect(page.getByRole('heading', { name: 'Windows', exact: true })).toBeVisible();
+  const pending = ['windows', 'macos', 'linux'].filter(
+    (platform) => !release.assets.some((asset) => asset.platform === platform),
+  );
+  await expect(page.getByText('Native build not published yet')).toHaveCount(pending.length);
+  const windows = release.assets.find((asset) => asset.platform === 'windows');
+  if (windows) {
+    await expect(page.getByRole('link', { name: 'Download Windows (x64)' })).toHaveAttribute(
+      'href',
+      windows.url,
+    );
+    await expect(page.getByText(windows.sha256, { exact: true })).toBeVisible();
+  } else {
+    await expect(page.getByRole('link', { name: 'Build for Windows' })).toBeVisible();
+    await page.getByRole('link', { name: 'Build for Windows' }).click();
+    await expect(page.getByRole('heading', { name: 'Windows', exact: true })).toBeVisible();
+  }
   await page.goto('http://127.0.0.1:4321');
   await page.getByText('Is FerXium really free forever?').click();
   await expect(
