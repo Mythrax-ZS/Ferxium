@@ -8,4 +8,4 @@ macOS: replace the absolute executable placeholder in `org.ferxium.service.plist
 
 Windows: invoke `./packaging/Install-UserStartup.ps1 -ServiceBinary C:\ABSOLUTE\PATH\ferxium-service.exe` under your normal user. It registers a Limited, interactive-user logon task. Remove it with `Unregister-ScheduledTask -TaskName FerXium-UserProtection`; no credential is stored and no privileged Windows Service is created.
 
-Tauri preview installers contain the desktop only. Companion-service installation and coordinated updates must be completed and audited before public production distribution.
+Tauri preview installers include the desktop, service, and CLI. Opening the installed desktop starts the service as your regular user. Startup registration is optional and uses the templates above; no privileged daemon is registered. Stop a running companion before updating or uninstalling the package. Coordinated updates and clean-machine installer audits remain production release work.

@@ -23,7 +23,10 @@ if (!host) throw new Error('Could not identify the native Rust build target');
 const target = process.env.TAURI_ENV_TARGET_TRIPLE || host;
 if (target !== host)
   throw new Error(`Use a native ${target} runner to build the companion service`);
-if (process.argv.includes('--build')) {
+const development = process.argv.includes('--dev');
+if (development) {
+  run('cargo', ['build', '--locked', '-p', 'ferxium-service', '-p', 'ferxium-cli']);
+} else if (process.argv.includes('--build')) {
   run('cargo', [
     'build',
     '--locked',
@@ -41,7 +44,7 @@ const destination = join(root, 'apps/desktop/src-tauri/binaries');
 mkdirSync(destination, { recursive: true });
 for (const name of ['ferxium-service', 'ferxium-cli']) {
   copyFileSync(
-    join(root, 'target/release', `${name}${extension}`),
+    join(root, development ? 'target/debug' : 'target/release', `${name}${extension}`),
     join(destination, `${name}-${host}${extension}`),
   );
 }
