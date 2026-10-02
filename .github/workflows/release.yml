@@ -48,8 +48,14 @@ jobs:
       - run: python scripts/collect-release.py
       - if: runner.os == 'macOS'
         run: |
-          codesign --verify --deep --strict target/release/bundle/macos/FerXium.app
-          target/release/ferxium-cli --help
+          ferxium_mount="$RUNNER_TEMP/ferxium-dmg"
+          mkdir -p "$ferxium_mount"
+          hdiutil attach target/release/bundle/dmg/*.dmg -nobrowse -readonly -mountpoint "$ferxium_mount"
+          trap 'hdiutil detach "$ferxium_mount"' EXIT
+          codesign --verify --deep --strict "$ferxium_mount/FerXium.app"
+          otool -L "$ferxium_mount/FerXium.app/Contents/MacOS/ferxium-service"
+          "$ferxium_mount/FerXium.app/Contents/MacOS/ferxium-cli" --help
+          FERXIUM_SERVICE_BINARY="$ferxium_mount/FerXium.app/Contents/MacOS/ferxium-service" node scripts/service-smoke.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.platform }}
