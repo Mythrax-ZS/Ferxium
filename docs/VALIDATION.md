@@ -6,11 +6,12 @@ Validated locally on Windows with Rust 1.98.1, Node.js 24.16.0, MSVC native tool
 - `cargo clippy --all-targets -- -D warnings` and Rust formatting.
 - Default core/service tests, plus the YARA-enabled suite.
 - Hash detection, heuristic combinations, exclusions, bounded sizes, and whitelist behavior.
+- RenEngine coverage: four published IOC records, legacy MD5 lookup with SHA-256 identity/allowlisting, malformed/duplicate hash rejection, five ASCII and UTF-16 pattern matches, missing-signal negatives, and benign tool indicators. Inert embedded-rule fixtures do not match campaign or marker rules. These are synthetic tests, not a live-malware detection benchmark.
 - Native Windows file watcher reports a harmless created file.
 - Encrypted quarantine, changed-file rejection, ciphertext tamper detection, missing-key protection, and non-overwriting restore.
 - Signed feed rejects forged keys, payload mutation, and replayed versions.
 - Actual API route tests reject absent/wrong auth, browser Origin, oversized bodies, and invalid custom scan roots.
-- Isolated daemon smoke: authenticated IPC → native watch → harmless YARA marker → quarantine → restore → delete backup → custom scan.
+- Isolated daemon smoke: authenticated IPC → native watch → harmless YARA marker and RenEngine indicator fixture → quarantine → restore → delete backup → custom scan with campaign detection.
 - TypeScript/Astro diagnostics and production builds for both frontends.
 - Playwright: demo scan pause/resume/cancel and settings; phone navigation, honest downloads, FAQ; all six website pages.
 - npm audit reports zero known vulnerabilities after dependency refresh.
@@ -22,6 +23,8 @@ Validated locally on Windows with Rust 1.98.1, Node.js 24.16.0, MSVC native tool
 - Windows desktop 0.1.1: launched an isolated copy without the companion service, delivered native window-close and tray-click notifications, and verified the window hides while its process and tray survive. Verified tray reopening and restoration from a minimized state, then invoked the actual native tray Quit menu and checked a clean exit. macOS Dock reopening is compiled and checked by native macOS builds; it has not been exercised interactively from this workspace.
 - Linux: extracted the release Debian package into an isolated Ubuntu 24.04 environment. Checked its declared GTK/WebKit/AppIndicator/OpenSSL runtime dependencies and service library resolution, ran the CLI, and passed the packaged service smoke test as a regular user.
 - macOS: release CI mounts each DMG, verifies the app's ad-hoc code signature, checks service library linkage, runs the bundled CLI, and executes the packaged service smoke test on the native runner.
+
+Version 0.1.2 release CI also runs the YARA-enabled regression suite and requires the release CLI to scan the actual desktop, service, and CLI binaries as clean on every platform. This guards against self-detection from embedded rule text.
 
 The Intel macOS 0.1.1 watcher check hit its 20-second marker-detection timeout once, then passed on a fresh runner with the same source. The cause has not been established. The smoke script now checks that YARA is enabled and includes bounded status diagnostics on failure without exposing the IPC token. Additional startup and load testing of native notifications remains follow-up work.
 

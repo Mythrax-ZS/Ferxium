@@ -4,6 +4,7 @@ use crate::{
 };
 use anyhow::{Result, ensure};
 use chrono::{DateTime, Utc};
+use md5::Md5;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
@@ -22,12 +23,25 @@ pub struct HashSignature {
     pub description: String,
 }
 
+/// Legacy threat-intelligence identifier. Never use MD5 for trust, allowlisting,
+/// update authentication, or quarantine integrity; those retain SHA-256/Ed25519.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Md5Signature {
+    pub md5: String,
+    pub name: String,
+    pub severity: Severity,
+    pub description: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SignatureDatabase {
     pub version: u64,
     pub published_at: DateTime<Utc>,
     pub signatures: Vec<HashSignature>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub md5_signatures: Vec<Md5Signature>,
 }
 
 impl SignatureDatabase {
@@ -38,7 +52,8 @@ impl SignatureDatabase {
         );
         let database: Self = serde_json::from_slice(bytes)?;
         ensure!(
-            database.version > 0 && database.signatures.len() <= 20_000,
+            database.version > 0
+                && database.signatures.len() + database.md5_signatures.len() <= 20_000,
             "Invalid database version or size"
         );
         for sig in &database.signatures {
@@ -50,12 +65,28 @@ impl SignatureDatabase {
                 "Invalid signature"
             );
         }
+        let mut seen = std::collections::HashSet::new();
+        for sig in &database.md5_signatures {
+            ensure!(
+                sig.md5.len() == 32
+                    && sig
+                        .md5
+                        .bytes()
+                        .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+                    && seen.insert(&sig.md5)
+                    && !sig.name.is_empty()
+                    && sig.name.len() <= 200
+                    && sig.description.len() <= 2000,
+                "Invalid or duplicate legacy MD5 signature"
+            );
+        }
         Ok(database)
     }
 }
 
 pub struct Scanner {
     signatures: HashMap<String, HashSignature>,
+    md5_signatures: HashMap<String, Md5Signature>,
     pub version: u64,
     yara: YaraEngine,
 }
@@ -68,6 +99,11 @@ impl Scanner {
                 .signatures
                 .into_iter()
                 .map(|s| (s.sha256.clone(), s))
+                .collect(),
+            md5_signatures: database
+                .md5_signatures
+                .into_iter()
+                .map(|s| (s.md5.clone(), s))
                 .collect(),
             yara: YaraEngine::new(rules)?,
         })
@@ -113,6 +149,18 @@ impl Scanner {
             findings.push(Finding {
                 name: sig.name.clone(),
                 method: "sha256".into(),
+                severity: sig.severity,
+                explanation: sig.description.clone(),
+            });
+        }
+        // Hash the same bounded snapshot as SHA-256 and YARA. MD5 is only an
+        // exact legacy IOC lookup; a finding is still identified by SHA-256.
+        if !self.md5_signatures.is_empty()
+            && let Some(sig) = self.md5_signatures.get(&hex::encode(Md5::digest(&bytes)))
+        {
+            findings.push(Finding {
+                name: sig.name.clone(),
+                method: "md5_ioc".into(),
                 severity: sig.severity,
                 explanation: sig.description.clone(),
             });

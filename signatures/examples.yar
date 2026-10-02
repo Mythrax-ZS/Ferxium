@@ -4,7 +4,9 @@ rule FerXium_Test_Marker {
         description = "Harmless FerXium integration-test marker"
         severity = "low"
     strings:
-        $marker = "FERXIUM_TEST_SIGNATURE_v1" ascii
+        // Split a literal in the rule source so embedding the database does not
+        // turn FerXium's own executable into the harmless test marker.
+        $marker = /FERXIUM_TEST_SIGNATURE_v[1]/ ascii
     condition:
         filesize < 67108864 and $marker
 }

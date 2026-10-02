@@ -8,7 +8,9 @@ A free, MIT-licensed, local-first antivirus project for Windows, Linux, and macO
 
 **Release status: 0.1.1 preview builds.** [Download Windows x64, Linux amd64, and macOS Apple silicon/Intel packages](https://ferxium.org/download/) or find them in [GitHub Releases](https://github.com/Mythrax-ZS/Ferxium/releases). Packages include the desktop, YARA-enabled service, and CLI. Windows builds have no publisher signature; macOS builds use ad-hoc integrity signatures without Developer ID or notarization.
 
-This repository implements working scanning, filesystem monitoring, encrypted quarantine, local IPC, and a complete UI. The bundled signatures are test examples, not a production malware corpus. It has not been independently audited or certified. Keep existing endpoint protection while evaluating. The tagline expresses ambition; no antivirus guarantees unbreakable protection.
+This repository implements working scanning, filesystem monitoring, encrypted quarantine, local IPC, and a complete UI. Bundled signatures include harmless tests and targeted published indicators, not a vetted production malware corpus. It has not been independently audited or certified. Keep existing endpoint protection while evaluating. The tagline expresses ambition; no antivirus guarantees unbreakable protection.
+
+Version 0.1.2 adds four published legacy hash indicators and five static rules for the RenEngine / RenPy Loader campaign described by Malwarebytes. See [threat coverage and its limits](docs/THREAT_COVERAGE.md). Rules run locally; compressed/encrypted archives and process memory are outside current coverage.
 
 ## Monorepo
 
@@ -40,7 +42,7 @@ flowchart LR
   CLI --> Core[ferxium-core]
   Service --> Core
   Core --> Watch[Native filesystem watcher]
-  Core --> Detect[SHA-256 / optional YARA / heuristics]
+  Core --> Detect[SHA-256 / legacy MD5 IOCs / optional YARA / heuristics]
   Core --> Vault[Encrypted quarantine]
   Core --> Feed[Opt-in HTTPS signed signature feed]
   Service --> State[Private local configuration and history]

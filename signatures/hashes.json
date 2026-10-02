@@ -1,7 +1,13 @@
 {
-  "version": 1,
+  "version": 2,
   "published_at": "2026-10-02T00:00:00Z",
   "signatures": [
     {"sha256": "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f", "name": "EICAR-Test-File", "severity": "high", "description": "Industry standard harmless antivirus test file, not real malware."}
+  ],
+  "md5_signatures": [
+    {"md5": "29203ca123d51b1b33505a0813d360df", "name": "Trojan.RenEngine.NancyLoader", "severity": "high", "description": "Legacy MD5 IOC for the trojanized first-stage Nancy DLL, published by Malwarebytes on 2026-07-20. MD5 identifies this reported sample; SHA-256 remains the report and quarantine identity."},
+    {"md5": "810f257542018be0fc62af542d13d012", "name": "Trojan.RenEngine.GollopDevest.Downloader", "severity": "high", "description": "Legacy MD5 IOC for the GollopDevest EtherHiding downloader DLL, published by Malwarebytes on 2026-07-20."},
+    {"md5": "681db529e402467a4b0567c82a350fc0", "name": "Trojan.RenEngine.PavinWride", "severity": "high", "description": "Legacy MD5 IOC for the anti-analysis DLL labeled PavinWride in Malwarebytes' 2026-07-20 IOC list (PavinWide in the analysis)."},
+    {"md5": "2e116632248a7e1f8aa6bca92d9c1c90", "name": "Trojan.RenEngine.GollopDevest.Loader", "severity": "high", "description": "Legacy MD5 IOC for the GollopDevest loader DLL, published by Malwarebytes on 2026-07-20."}
   ]
 }

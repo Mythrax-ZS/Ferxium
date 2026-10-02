@@ -33,15 +33,31 @@ impl YaraEngine {
                 .rules
                 .scan_mem(bytes, 3)?
                 .into_iter()
-                .map(|rule| Finding {
-                    name: rule.identifier.to_owned(),
-                    method: "yara".into(),
-                    severity: if rule.identifier == "FerXium_Test_Marker" {
-                        Severity::Low
-                    } else {
-                        Severity::Medium
-                    },
-                    explanation: "YARA rule matched; review context before taking action.".into(),
+                .map(|rule| {
+                    let text_meta = |key| {
+                        rule.metadatas.iter().find_map(|meta| {
+                            if meta.identifier == key
+                                && let yara::MetadataValue::String(value) = &meta.value
+                            {
+                                return Some(*value);
+                            }
+                            None
+                        })
+                    };
+                    Finding {
+                        name: rule.identifier.to_owned(),
+                        method: "yara".into(),
+                        severity: match text_meta("severity") {
+                            Some("low") => Severity::Low,
+                            Some("high") => Severity::High,
+                            Some("critical") => Severity::Critical,
+                            _ => Severity::Medium,
+                        },
+                        explanation: text_meta("description")
+                            .filter(|value| value.len() <= 2000)
+                            .unwrap_or("YARA rule matched; review context before taking action.")
+                            .to_owned(),
+                    }
                 })
                 .collect())
         }

@@ -14,4 +14,8 @@ pub use models::*;
 pub use scanner::Scanner;
 
 pub const BUNDLED_DATABASE: &str = include_str!("../../../signatures/hashes.json");
-pub const BUNDLED_RULES: &str = include_str!("../../../signatures/examples.yar");
+pub const BUNDLED_RULES: &str = concat!(
+    include_str!("../../../signatures/examples.yar"),
+    "\n",
+    include_str!("../../../signatures/renengine-2026-07.yar")
+);

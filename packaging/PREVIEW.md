@@ -1,4 +1,12 @@
-# FerXium 0.1.1 preview builds
+# FerXium 0.1.2 preview builds
+
+Adds four valid published legacy MD5 indicators and five original YARA patterns
+for the RenEngine / RenPy Loader chain described by Malwarebytes on July 20, 2026.
+Coverage is local and static; encrypted archives and process memory remain outside
+current scanning. See [coverage notes](https://github.com/Mythrax-ZS/Ferxium/blob/main/docs/THREAT_COVERAGE.md).
+Rules are tested with inert indicators, not live malware. The malformed final
+payload hash in the report is excluded. Ordinary development tools alone are not
+flagged by these campaign rules. No network blocking is added.
 
 These packages include the desktop, current-user protection service, and CLI.
 Opening the installed desktop starts the bundled service without administrator
@@ -23,6 +31,6 @@ signatures for executable integrity; they have no Developer ID signature or Appl
 notarization and may be blocked by Gatekeeper. This is an evaluation release.
 
 Each download has a SHA-256 checksum. A checksum verifies bytes, not the identity
-of the publisher. The bundled YARA rules and hash database are examples, not a
+of the publisher. The bundled rules include tests and targeted indicators, not a
 vetted production malware corpus. The project has not been independently audited.
 Read the security model and dependency review before relying on these builds.

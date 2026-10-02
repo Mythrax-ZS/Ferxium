@@ -18,6 +18,7 @@ fn scanner() -> Scanner {
         SignatureDatabase {
             version: 1,
             published_at: Utc::now(),
+            md5_signatures: vec![],
             signatures: vec![HashSignature {
                 sha256: hex::encode(Sha256::digest(SAMPLE)),
                 name: "Harmless.HashFixture".into(),
@@ -146,11 +147,13 @@ fn changed_source_cannot_be_quarantined_using_an_old_report() {
 fn signatures_reject_forgery_replay_and_payload_mutation() {
     let key = SigningKey::from_bytes(&[7u8; 32]);
     let pubkey = hex::encode(key.verifying_key().to_bytes());
-    let payload = BUNDLED_DATABASE.replace("\"version\": 1", "\"version\": 2");
+    let mut database: serde_json::Value = serde_json::from_str(BUNDLED_DATABASE).unwrap();
+    database["version"] = 3.into();
+    let payload = serde_json::to_string(&database).unwrap();
     let signature = hex::encode(key.sign(payload.as_bytes()).to_bytes());
     let signed = SignedEnvelope { payload, signature };
-    assert_eq!(updater::verify(&signed, &pubkey, 1).unwrap().version, 2);
-    assert!(updater::verify(&signed, &pubkey, 2).is_err());
+    assert_eq!(updater::verify(&signed, &pubkey, 2).unwrap().version, 3);
+    assert!(updater::verify(&signed, &pubkey, 3).is_err());
     let wrong = SigningKey::from_bytes(&[8u8; 32]);
     assert!(updater::verify(&signed, &hex::encode(wrong.verifying_key().to_bytes()), 1).is_err());
     let modified = SignedEnvelope {

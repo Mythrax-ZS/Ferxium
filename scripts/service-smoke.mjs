@@ -96,6 +96,30 @@ try {
     return !!threat;
   });
   assert.equal(threat.findings[0].method, 'yara');
+  // Words only, not a BAT program: verify campaign rules reach the real watcher,
+  // status API, and custom-scan engine in the actual packaged protection service.
+  const campaign = join(watched, 'harmless-renengine-indicators.txt');
+  await writeFile(
+    campaign,
+    [
+      'Harmless static regression fixture; do not execute',
+      'MSBUILDENABLEALLPROPERTYFUNCTIONS=1',
+      '_czzf',
+      'Nancy.csproj',
+      'MSBuild.exe',
+      'conhost.exe',
+      '--headless',
+    ].join('\n'),
+  );
+  await until(async () =>
+    (await status()).threats.some(
+      (t) =>
+        t.path.endsWith('harmless-renengine-indicators.txt') &&
+        t.findings.some(
+          (f) => f.name === 'FerXium_RenEngine_MSBuild_Launcher' && f.severity === 'high',
+        ),
+    ),
+  );
   await action({ action: 'quarantine', id: threat.id });
   await assert.rejects(access(marker));
   assert.equal((await status()).quarantine[0].source_removed, true);
@@ -107,8 +131,9 @@ try {
   await action({ action: 'start_scan', request: { kind: 'custom', paths: [watched] } });
   await until(async () => (await status()).scan?.state === 'completed');
   assert.equal((await status()).scan.errors, 0);
+  assert.ok((await status()).scan.threats > 0);
   console.log(
-    'Real service smoke passed: auth, native watcher, YARA, quarantine, restore, delete, custom scan.',
+    'Real service smoke passed: auth, native watcher, YARA, RenEngine indicators, quarantine, restore, delete, custom scan.',
   );
   console.log(`Isolated test state retained for inspection: ${root}`);
 } finally {

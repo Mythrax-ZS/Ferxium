@@ -321,7 +321,7 @@ export default function App() {
             </div>
           </div>
           <span className="version">
-            FerXium v{status?.version ?? '0.1.1'} <span>MIT LICENSE</span>
+            FerXium v{status?.version ?? '0.1.2'} <span>MIT LICENSE</span>
           </span>
         </div>
       </aside>

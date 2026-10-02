@@ -36,8 +36,8 @@ import { sourceArchive, version } from '../data/site';
           Choose your platform on the <a href="/download/">download page</a> and compare the
           package’s SHA-256 checksum before opening it. These evaluation packages include the
           desktop, YARA-enabled service, and CLI. They have no publisher certificate; macOS builds
-          are not notarized. The signature database contains examples, so keep your current
-          antivirus while evaluating.
+          are not notarized. The signature database contains harmless tests and targeted published
+          indicators, so keep your current antivirus while evaluating.
         </p>
         <p>
           Windows: run the x64 setup as your normal user. The installer handles the WebView2
@@ -119,6 +119,15 @@ npm run tauri -- dev</code></pre>
         </p>
       </section>
       <section id="scanning">
+        <p>
+          Version 0.1.2 adds local hash and YARA indicators for the RenEngine / RenPy Loader
+          campaign. Read the{' '}
+          <a href="https://github.com/Mythrax-ZS/Ferxium/blob/main/docs/THREAT_COVERAGE.md">
+            coverage notes
+          </a>
+          for exact rules and limits. Encrypted archives and process memory remain outside current
+          scanning.
+        </p>
         <h2>Your first scan</h2>
         <p>
           Open Scans and choose Quick, Full, or Custom. Review file counts, skips, read errors, and
