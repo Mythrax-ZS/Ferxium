@@ -1,6 +1,6 @@
 # Validation
 
-Validated locally on Windows with Rust 1.98.1, Node.js 24.16.0, MSVC native tools and LLVM available. Standard CI checks pass on Windows, Linux, and macOS. The [native preview release workflow](https://github.com/Mythrax-ZS/Ferxium/actions/runs/36986114103) builds Windows x64 NSIS, Ubuntu 24.04 amd64 Debian, macOS Apple silicon DMG, and macOS Intel DMG packages.
+Validated locally on Windows with Rust 1.98.1, Node.js 24.16.0, MSVC native tools and LLVM available. Standard CI checks pass on Windows, Linux, and macOS. The [native preview release workflow](https://github.com/Mythrax-ZS/Ferxium/actions/runs/36997910867) builds Windows x64 NSIS, Ubuntu 24.04 amd64 Debian, macOS Apple silicon DMG, and macOS Intel DMG packages.
 
 - `cargo check` and the native Tauri desktop build.
 - `cargo clippy --all-targets -- -D warnings` and Rust formatting.
@@ -21,7 +21,7 @@ Validated locally on Windows with Rust 1.98.1, Node.js 24.16.0, MSVC native tool
 ## Native packages
 
 - Windows: extracted the release NSIS payload and confirmed the desktop, service, and CLI executables are present. Ran the packaged service smoke test as a regular user.
-- Windows desktop 0.1.1: launched an isolated copy without the companion service, delivered native window-close and tray-click notifications, and verified the window hides while its process and tray survive. Verified tray reopening and restoration from a minimized state, then invoked the actual native tray Quit menu and checked a clean exit. macOS Dock reopening is compiled and checked by native macOS builds; it has not been exercised interactively from this workspace.
+- Windows desktop 0.1.2: launched an isolated copy without the companion service, delivered native window-close and tray-click notifications, and verified the window hides while its process and tray survive. Verified tray reopening and restoration from a minimized state, then invoked the actual native tray Quit menu and checked a clean exit. macOS Dock reopening is compiled and checked by native macOS builds; it has not been exercised interactively from this workspace.
 - Linux: extracted the release Debian package into an isolated Ubuntu 24.04 environment. Checked its declared GTK/WebKit/AppIndicator/OpenSSL runtime dependencies and service library resolution, ran the CLI, and passed the packaged service smoke test as a regular user.
 - macOS: release CI mounts each DMG, verifies the app's ad-hoc code signature, checks service library linkage, runs the bundled CLI, and executes the packaged service smoke test on the native runner.
 
@@ -31,9 +31,9 @@ Intel macOS watcher checks timed out in 0.1.1 and the first 0.1.2 candidates. Di
 
 The smoke test exercises authenticated IPC, the native file watcher, harmless YARA detection, quarantine, restore, deletion, and a custom scan. Package hashes are checked before importing download metadata, checked again on the VPS before deployment, and checked against public HTTPS downloads after deployment. No preview has a publisher certificate; macOS ad-hoc integrity signatures do not establish publisher identity or notarization. Clean-machine graphical installer and desktop integration testing remain release milestones.
 
-## Reproduce checks
-
 Intel diagnostics after the watch-path fix showed the first marker detected, then a second fixture delayed while hundreds of executables were scanned during startup. Process monitoring now establishes a baseline instead of enqueueing already-running executables. Quick Scan retains coverage of existing process files; the native smoke deadline remains unchanged.
+
+## Reproduce checks
 
 Reproduce the service flow after building with native YARA:
 
