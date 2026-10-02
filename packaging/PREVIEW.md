@@ -10,6 +10,8 @@ flagged by these campaign rules. No network blocking is added.
 Repeated scans also count matching files already present in pending history.
 Watch roots resolve filesystem aliases before native registration, including
 macOS temporary folders under `/var`.
+Process monitoring establishes a startup baseline so existing executables do not
+delay watched-file events. Quick Scan checks processes already running.
 
 These packages include the desktop, current-user protection service, and CLI.
 Opening the installed desktop starts the bundled service without administrator

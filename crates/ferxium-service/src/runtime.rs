@@ -509,7 +509,10 @@ pub fn spawn_background(app: Arc<App>, tx: mpsc::Sender<PathBuf>, mut rx: mpsc::
         let mut revision = u64::MAX;
         let mut watcher = None;
         let mut system = sysinfo::System::new();
-        let mut known = HashSet::new();
+        // Establish a baseline instead of queueing every running executable at
+        // startup. That flood can delay file events; Quick Scan covers existing
+        // processes. Later snapshots still detect new PID/start-time identities.
+        let mut known: Option<HashSet<(sysinfo::Pid, u64)>> = None;
         let mut networks = sysinfo::Networks::new_with_refreshed_list();
         let mut tick = 0u64;
         while !watcher_app.shutdown.load(Ordering::Acquire) {
@@ -546,14 +549,16 @@ pub fn spawn_background(app: Arc<App>, tx: mpsc::Sender<PathBuf>, mut rx: mpsc::
                     let identity = (*pid, process.start_time());
                     next.insert(identity);
                     if enabled
-                        && !known.contains(&identity)
+                        && known
+                            .as_ref()
+                            .is_some_and(|known| !known.contains(&identity))
                         && let Some(path) = process.exe()
                         && process_tx.try_send(path.to_path_buf()).is_err()
                     {
                         watcher_app.dropped.fetch_add(1, Ordering::Relaxed);
                     }
                 }
-                known = next;
+                known = Some(next);
                 networks.refresh(true);
                 // Socket metadata stays local; ordinary connections are not
                 // treated as malicious. Failures are represented as unavailable.

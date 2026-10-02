@@ -33,6 +33,8 @@ The smoke test exercises authenticated IPC, the native file watcher, harmless YA
 
 ## Reproduce checks
 
+Intel diagnostics after the watch-path fix showed the first marker detected, then a second fixture delayed while hundreds of executables were scanned during startup. Process monitoring now establishes a baseline instead of enqueueing already-running executables. Quick Scan retains coverage of existing process files; the native smoke deadline remains unchanged.
+
 Reproduce the service flow after building with native YARA:
 
 ```sh

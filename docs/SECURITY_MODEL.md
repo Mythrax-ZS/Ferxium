@@ -16,7 +16,7 @@ This is a local same-user transport, not mutual service identity authentication.
 
 ## Detection and visibility
 
-Native watchers observe filesystem events after they happen. They do not deny open/execute access. Process polling every five seconds can miss short-lived processes; only executable files are scanned, not memory. Network summaries are sampled local socket/interface metadata, not traffic inspection or prevention. A watcher error or full queue increments a visible dropped-event counter; there is no guaranteed replay/reconciliation yet.
+Native watchers observe filesystem events after they happen. They do not deny open/execute access. Process polling establishes a startup baseline and checks newly observed identities every five seconds; it can miss short-lived processes. Quick Scan checks existing process executables. Only executable files are scanned, not memory. Network summaries are sampled local socket/interface metadata, not traffic inspection or prevention. A watcher error or full queue increments a visible dropped-event counter; there is no guaranteed replay/reconciliation yet.
 
 Scans use the initiating configuration and engine snapshot. Changing settings or signatures affects later jobs. Full traversal omits state, staging directories, symlinks, special files and Linux pseudo filesystems. Exclusions and maximum file size reduce coverage. A heuristic finding is a review signal, not a malware verdict. Bundled hashes/rules contain harmless tests and targeted published indicators; see [campaign coverage](THREAT_COVERAGE.md). Legacy MD5 matches identify reported samples; MD5 is never used for allowlisting, quarantine integrity, or feed authentication. No claim is made of comprehensive malware detection or independent certification.
 
