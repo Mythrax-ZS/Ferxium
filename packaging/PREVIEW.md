@@ -7,6 +7,7 @@ current scanning. See [coverage notes](https://github.com/Mythrax-ZS/Ferxium/blo
 Rules are tested with inert indicators, not live malware. The malformed final
 payload hash in the report is excluded. Ordinary development tools alone are not
 flagged by these campaign rules. No network blocking is added.
+Repeated scans also count matching files already present in pending history.
 
 These packages include the desktop, current-user protection service, and CLI.
 Opening the installed desktop starts the bundled service without administrator

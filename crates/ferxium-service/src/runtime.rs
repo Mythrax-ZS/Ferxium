@@ -377,9 +377,12 @@ impl App {
                             Ok(FileOutcome::Skipped { .. }) => progress.skipped += 1,
                             Ok(outcome) => {
                                 progress.scanned += 1;
-                                if self.record_outcome(outcome) {
+                                // A scan counts every detected file, even when
+                                // history already has the same pending threat.
+                                if matches!(&outcome, FileOutcome::Detected { .. }) {
                                     progress.threats += 1;
                                 }
+                                self.record_outcome(outcome);
                             }
                             Err(_) => progress.errors += 1,
                         }
@@ -631,4 +634,66 @@ pub fn spawn_background(app: Arc<App>, tx: mpsc::Sender<PathBuf>, mut rx: mpsc::
             }
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ferxium_core::scanner::Md5Signature;
+
+    #[tokio::test]
+    async fn repeat_scans_count_detections_without_duplicate_history() {
+        let dir = tempfile::tempdir().unwrap();
+        let data = dir.path().join("state");
+        storage::private_dir(&data).unwrap();
+        let file = dir.path().join("inert.txt");
+        std::fs::write(&file, b"abc").unwrap();
+        let file = file.canonicalize().unwrap();
+        let app = Arc::new(App::load(data).unwrap());
+        let engine = Arc::new(
+            Scanner::new(
+                SignatureDatabase {
+                    version: 1,
+                    published_at: Utc::now(),
+                    signatures: vec![],
+                    md5_signatures: vec![Md5Signature {
+                        md5: "900150983cd24fb0d6963f7d28e17f72".into(),
+                        name: "Harmless.CounterFixture".into(),
+                        severity: Severity::Low,
+                        description: "Inert known-file regression fixture".into(),
+                    }],
+                },
+                BUNDLED_RULES,
+            )
+            .unwrap(),
+        );
+        assert!(app.record_outcome(engine.scan_file(&file, &Config::default()).unwrap()));
+        *app.engine.write().unwrap() = engine;
+        for _ in 0..2 {
+            let id = app
+                .start_scan(ScanRequest {
+                    kind: ScanKind::Custom,
+                    paths: vec![file.clone()],
+                })
+                .unwrap();
+            tokio::time::timeout(Duration::from_secs(5), async {
+                loop {
+                    let snapshot = app.snapshot().unwrap();
+                    if let Some(scan) = snapshot.scan
+                        && scan.id == id
+                        && scan.state == "completed"
+                    {
+                        assert_eq!(scan.scanned, 1);
+                        assert_eq!(scan.threats, 1);
+                        assert_eq!(scan.errors, 0);
+                        assert_eq!(snapshot.threats.len(), 1);
+                        break;
+                    }
+                    tokio::time::sleep(Duration::from_millis(20)).await;
+                }
+            })
+            .await
+            .unwrap();
+        }
+    }
 }
