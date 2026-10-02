@@ -24,7 +24,7 @@ Validated locally on Windows with Rust 1.98.1, Node.js 24.16.0, MSVC native tool
 - Linux: extracted the release Debian package into an isolated Ubuntu 24.04 environment. Checked its declared GTK/WebKit/AppIndicator/OpenSSL runtime dependencies and service library resolution, ran the CLI, and passed the packaged service smoke test as a regular user.
 - macOS: release CI mounts each DMG, verifies the app's ad-hoc code signature, checks service library linkage, runs the bundled CLI, and executes the packaged service smoke test on the native runner.
 
-Version 0.1.2 release CI also runs the YARA-enabled regression suite and requires the release CLI to scan the actual desktop, service, and CLI binaries as clean on every platform. This guards against self-detection from embedded rule text.
+Version 0.1.2 release CI also runs the YARA-enabled regression suite and requires the release CLI to scan the actual desktop, service, and CLI binaries as clean on every platform. This guards against self-detection from embedded rule text. The gate exposed release optimization embedding the EICAR test string; the matcher now compares encoded bytes without constructing that string. Its positive and near-miss regression runs in memory because host antivirus can intercept EICAR files before FerXium reads them.
 
 The Intel macOS 0.1.1 watcher check hit its 20-second marker-detection timeout once, then passed on a fresh runner with the same source. The cause has not been established. The smoke script now checks that YARA is enabled and includes bounded status diagnostics on failure without exposing the IPC token. Additional startup and load testing of native notifications remains follow-up work.
 

@@ -165,13 +165,7 @@ impl Scanner {
                 explanation: sig.description.clone(),
             });
         }
-        // EICAR matching also covers the standard test string with a trailing newline.
-        let eicar = [
-            b"X5O!P%@AP[4\\PZX54(P^)7CC)7}".as_slice(),
-            b"$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*",
-        ]
-        .concat();
-        if bytes.windows(eicar.len()).any(|w| w == eicar) && findings.is_empty() {
+        if matches_eicar(&bytes) && findings.is_empty() {
             findings.push(Finding {
                 name: "EICAR-Test-File".into(),
                 method: "test_signature".into(),
@@ -202,6 +196,25 @@ impl Scanner {
             })
         }
     }
+}
+
+fn matches_eicar(bytes: &[u8]) -> bool {
+    // Keep the harmless test string out of the scanner's own on-disk image.
+    // Compare against encoded bytes directly; black_box prevents release LTO
+    // from folding the XOR back into an embedded plaintext signature.
+    const ENCODED: &[u8] = &[
+        253, 144, 234, 132, 245, 128, 229, 228, 245, 254, 145, 249, 245, 255, 253, 144, 145, 141,
+        245, 251, 140, 146, 230, 230, 140, 146, 216, 129, 224, 236, 230, 228, 247, 136, 246, 241,
+        228, 235, 225, 228, 247, 225, 136, 228, 235, 241, 236, 243, 236, 247, 240, 246, 136, 241,
+        224, 246, 241, 136, 227, 236, 233, 224, 132, 129, 237, 142, 237, 143,
+    ];
+    let key = std::hint::black_box(0xa5u8);
+    bytes.windows(ENCODED.len()).any(|window| {
+        window
+            .iter()
+            .zip(ENCODED)
+            .all(|(&actual, &encoded)| actual ^ key == encoded)
+    })
 }
 
 fn heuristics(path: &Path, bytes: &[u8]) -> Vec<Finding> {
@@ -314,4 +327,25 @@ pub fn quick_roots() -> Vec<PathBuf> {
             .filter_map(|p| p.exe().map(Path::to_path_buf)),
     );
     paths.into_iter().filter(|p| p.exists()).collect()
+}
+
+#[cfg(test)]
+mod eicar_tests {
+    #[test]
+    fn encoded_matcher_accepts_eicar_and_newlines_but_rejects_near_misses() {
+        // Test bytes directly: an installed AV may intercept harmless EICAR
+        // files before this scanner can read them. Do not disable host protection.
+        let marker = [
+            b"X5O!P%@AP[4\\PZX54(P^)7CC)7}".as_slice(),
+            b"$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*",
+        ]
+        .concat();
+        for suffix in [b"".as_slice(), b"\n", b"\r\n"] {
+            assert!(super::matches_eicar(&[marker.as_slice(), suffix].concat()));
+        }
+        let mut near_miss = marker;
+        near_miss[0] ^= 1;
+        assert!(!super::matches_eicar(&near_miss));
+        assert!(!super::matches_eicar(b"ordinary file contents"));
+    }
 }
