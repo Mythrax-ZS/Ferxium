@@ -10,6 +10,8 @@ FerXium 0.1.2 adds local file detection derived from [Malwarebytes' July 20, 202
 
 The rules run in quick, full, custom, scheduled, and watched-file scans through the same engine. Native preview packages enable YARA. Default Rust builds without `yara-engine` retain the four hash lookups but do not run these five patterns. Toggleable generic heuristics are separate from signatures; disabling heuristics does not disable YARA or exact IOC matching. Exclusions, SHA-256 allowlisting, file limits, and access permissions still apply.
 
+An explicitly configured cached signed feed replaces the bundled hash database. Include these indicators when publishing that feed; the embedded YARA rules remain available independently of its hash contents.
+
 ## Integrity and source caveats
 
 MD5 is a legacy IOC identifier, not a security integrity primitive. Reports, allowlisting, quarantine verification, and installer checksums continue to use SHA-256; feed authenticity uses Ed25519. MD5 cannot establish publisher trust and deliberate collisions can undermine identification.

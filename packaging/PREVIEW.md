@@ -8,6 +8,8 @@ Rules are tested with inert indicators, not live malware. The malformed final
 payload hash in the report is excluded. Ordinary development tools alone are not
 flagged by these campaign rules. No network blocking is added.
 Repeated scans also count matching files already present in pending history.
+Watch roots resolve filesystem aliases before native registration, including
+macOS temporary folders under `/var`.
 
 These packages include the desktop, current-user protection service, and CLI.
 Opening the installed desktop starts the bundled service without administrator

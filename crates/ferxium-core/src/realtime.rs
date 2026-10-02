@@ -31,7 +31,11 @@ pub fn watch(
             _ => {}
         })?;
     for path in paths {
-        watcher.watch(path, RecursiveMode::Recursive)?;
+        // FSEvents observes the named path, so aliases such as macOS /var ->
+        // /private/var must resolve before registration. Other backends also
+        // receive one consistent absolute spelling of the watched directory.
+        let canonical = path.canonicalize()?;
+        watcher.watch(&canonical, RecursiveMode::Recursive)?;
     }
     Ok(watcher)
 }
