@@ -1,6 +1,8 @@
 # Dependency review for the source preview
 
-Local npm audit reports no known vulnerabilities in the committed npm dependency graph. Cargo audit reports zero entries in its vulnerability list and **three informational warnings**; a successful exit is not an all-clear for production deployment.
+The npm graph includes a local security backport for `http-cache-semantics`, described below. Cargo audit reports zero entries in its vulnerability list and **three informational warnings**; a successful exit is not an all-clear for production deployment.
+
+Astro 7.3.5 depends on `http-cache-semantics` 4.2.0, affected by [GHSA-ch52-4w7c-c8xp](https://github.com/advisories/GHSA-ch52-4w7c-c8xp). No fixed upstream release was available on 2026-10-03. The root npm override uses a licensed local fork that backports the reuse-restriction fix proposed in upstream PR #58. See [the backport provenance, tests and removal instructions](../vendor/http-cache-semantics/BACKPORT.md). The audit remains enabled; local dependencies require direct code review and regression testing as well as database checks. The production website is static and uses local assets, but the dependency is patched rather than relying on that limited exposure.
 
 | Package                | Advisory                                            | Scope and required follow-up                                                                                                                                                                                                                                                     |
 | ---------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

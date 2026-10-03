@@ -21,8 +21,11 @@ root_files = {
     "Cargo.lock", "Cargo.toml", "LICENSE", "README.md", "SECURITY.md",
     "package-lock.json", "package.json", "playwright.config.ts", "rustfmt.toml",
 }
+# The build dependency backport and its original BSD license must accompany the
+# npm override. Keep this an explicit tree rather than admitting arbitrary vendor files.
+vendor_tree = "vendor/http-cache-semantics"
 extensions = {
-    ".rs", ".toml", ".json", ".ts", ".tsx", ".js", ".mjs", ".css", ".html",
+    ".rs", ".toml", ".json", ".ts", ".tsx", ".js", ".mjs", ".cjs", ".css", ".html",
     ".astro", ".svg", ".png", ".ico", ".icns", ".md", ".yml", ".yaml", ".yar",
     ".py", ".ps1", ".sh", ".plist", ".service", ".txt", ".caddy",
 }
@@ -39,9 +42,11 @@ with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as bun
         if any(part in excluded for part in rel.parts):
             continue
         if rel.as_posix() not in root_files:
-            if rel.parts[0] not in trees:
+            is_cache_backport = rel.as_posix().startswith(vendor_tree + "/")
+            if rel.parts[0] not in trees and not is_cache_backport:
                 continue
-            if path.name != ".env.example" and (path.name.startswith(".env") or path.suffix not in extensions):
+            allowed_name = path.name == ".env.example" or (is_cache_backport and path.name == "LICENSE")
+            if not allowed_name and (path.name.startswith(".env") or path.suffix not in extensions):
                 continue
         if path.is_symlink() or not path.is_file():
             raise RuntimeError(f"Refusing non-regular source: {rel}")

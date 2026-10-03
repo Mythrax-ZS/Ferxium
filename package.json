@@ -11,9 +11,14 @@
     "build": "npm run build --workspaces",
     "check": "npm run check --workspaces",
     "tauri": "npm exec --workspace @ferxium/desktop -- tauri",
-    "test:ui": "playwright test"
+    "test:ui": "playwright test",
+    "test:cache-security": "node --test vendor/http-cache-semantics/test/cache-reuse.cjs"
+  },
+  "overrides": {
+    "http-cache-semantics": "$http-cache-semantics"
   },
   "devDependencies": {
+    "http-cache-semantics": "file:./vendor/http-cache-semantics",
     "@playwright/test": "^1.63.0",
     "prettier": "^3.9.9",
     "prettier-plugin-astro": "^1.1.0"

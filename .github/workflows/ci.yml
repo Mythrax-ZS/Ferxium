@@ -52,6 +52,7 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - run: npm run test:cache-security
       - run: npm run check
       - run: npm run build
       - run: npm audit --audit-level=high

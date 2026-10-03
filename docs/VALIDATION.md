@@ -15,7 +15,7 @@ Validated locally on Windows with Rust 1.98.1, Node.js 24.16.0, MSVC native tool
 - Isolated daemon smoke: authenticated IPC → native watch → harmless YARA marker and RenEngine indicator fixture → quarantine → restore → delete backup → custom scan with campaign detection.
 - TypeScript/Astro diagnostics and production builds for both frontends.
 - Playwright: demo scan pause/resume/cancel and settings; phone navigation, honest downloads, FAQ; all six website pages.
-- npm audit reports zero known vulnerabilities after dependency refresh.
+- A fresh `npm ci` loads the local cache security backport through Astro; all 31 cache-reuse regression checks pass. `npm audit --audit-level=high` reports zero known vulnerabilities in its database checks. The local fork requires separate regression testing and review; see [backport provenance](../vendor/http-cache-semantics/BACKPORT.md).
 - Cargo audit reports zero vulnerabilities and three informational warnings, including Linux glib unsoundness; see [the dependency review](DEPENDENCY_REVIEW.md). These warnings remain release follow-up work.
 
 ## Native packages

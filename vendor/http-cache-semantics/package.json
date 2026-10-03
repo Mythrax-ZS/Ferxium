@@ -1,0 +1,17 @@
+{
+  "name": "http-cache-semantics",
+  "version": "4.2.1+ferxium.1",
+  "description": "FerXium security backport of http-cache-semantics 4.2.0 (GHSA-ch52-4w7c-c8xp)",
+  "main": "index.js",
+  "types": "index.js",
+  "license": "BSD-2-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mythrax-ZS/Ferxium.git",
+    "directory": "vendor/http-cache-semantics"
+  },
+  "files": ["index.js", "LICENSE", "README.md", "BACKPORT.md"],
+  "scripts": {
+    "test": "node --test test/cache-reuse.cjs"
+  }
+}
