@@ -1,8 +1,25 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { protectionPresentation } from '../../apps/desktop/src/health';
+import { demo } from '../../apps/desktop/src/demo';
 const release = JSON.parse(readFileSync('apps/website/src/data/releases.json', 'utf8')) as {
   assets: Array<{ platform: string; url: string; sha256: string }>;
 };
+
+test('protection health distinguishes recovery, degradation and historical event loss', () => {
+  expect(protectionPresentation({ ...demo, dropped_events: 20 }, false).label).toBe(
+    'FILE MONITORING ACTIVE',
+  );
+  for (const health of ['recovering', 'degraded'] as const) {
+    expect(
+      protectionPresentation({ ...demo, monitoring: { ...demo.monitoring!, health } }, false).label,
+    ).toBe(`FILE MONITORING ${health.toUpperCase()}`);
+  }
+  expect(protectionPresentation({ ...demo, watcher_active: false }, false).label).toBe(
+    'FILE MONITORING DEGRADED',
+  );
+  expect(protectionPresentation(demo, true).label).toBe('FILE MONITORING INACTIVE');
+});
 
 test('desktop demo scan pauses, resumes and cancels without host file access', async ({ page }) => {
   const errors: string[] = [];

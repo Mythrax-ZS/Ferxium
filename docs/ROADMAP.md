@@ -15,7 +15,7 @@
 - Vetted signature corpus, reproducible false-positive/detection benchmarks, licenses and feed ownership.
 - Handle-relative containment, platform file identity, journaled crash recovery, bounded disk quotas and quarantine recovery UI.
 - Restrict native parsers/YARA to sandboxed workers with hard CPU/memory budgets.
-- Reconcile watcher overflows, network filesystems and missed process activity.
+- Continue hardening watched-folder reconciliation under adversarial churn; network filesystems and missed process activity need dedicated platform work. Version 0.1.3 adds overflow recovery, bounded workers, retries and monitoring health; see [its limits](REALTIME.md).
 - Persist calendar/time-zone schedules, missed-run policy and scan checkpoints across restarts.
 - Package/sign GUI plus companion service; service lifecycle, clean upgrades and uninstall.
 - Audit accessibility, localization and screen-reader flows; broad platform testing.

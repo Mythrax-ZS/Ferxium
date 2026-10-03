@@ -7,7 +7,7 @@ Only verified release packages and their checksums belong in its downloads folde
 
 ```powershell
 $env:SITE_URL = 'https://ferxium.org'
-$env:PUBLIC_SOURCE_ARCHIVE_URL = '/downloads/ferxium-0.1.1-source.zip'
+$env:PUBLIC_SOURCE_ARCHIVE_URL = '/downloads/ferxium-0.1.3-source.zip'
 $env:PUBLIC_REPOSITORY_URL = 'https://github.com/Mythrax-ZS/Ferxium'
 # Download all native release artifacts to one directory, then verify the manifest.
 python scripts/import-release.py artifacts/native-release

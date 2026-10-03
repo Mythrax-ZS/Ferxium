@@ -1,7 +1,7 @@
 // Exercise the real authenticated API with an isolated state/watch directory.
 // The marker is harmless and requires a service built with --features yara-engine.
 import { spawn } from 'node:child_process';
-import { mkdtemp, mkdir, readFile, writeFile, access } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, access, rename } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import assert from 'node:assert/strict';
@@ -43,6 +43,7 @@ async function until(fn, seconds = 20) {
     scanned_total: latestStatus.scanned_total,
     threats_found: latestStatus.threats.length,
     activity: latestStatus.activity.slice(0, 10),
+    monitoring: latestStatus.monitoring,
   };
   throw new Error(
     `Timed out in isolated state ${root}. Service: ${stderr}. Status: ${JSON.stringify(diagnostics)}`,
@@ -132,8 +133,31 @@ try {
   await until(async () => (await status()).scan?.state === 'completed');
   assert.equal((await status()).scan.errors, 0);
   assert.ok((await status()).scan.threats > 0);
+  await until(async () => (await status()).monitoring?.health === 'healthy');
+  // A folder moved into a watched root may produce only a directory event.
+  const prepared = join(root, 'prepared-folder');
+  await mkdir(prepared);
+  await writeFile(join(prepared, 'moved-inert-marker.txt'), 'FERXIUM_TEST_SIGNATURE_v1');
+  await rename(prepared, join(watched, 'moved-folder'));
+  await until(async () =>
+    (await status()).threats.some((t) => t.path.endsWith('moved-inert-marker.txt')),
+  );
+  // Remove the watched root, observe degraded coverage, then recreate it with
+  // a file already present before registration. Recovery must find that file.
+  await rename(watched, join(root, 'detached-watched'));
+  await until(async () => (await status()).monitoring?.health === 'degraded');
+  await mkdir(watched);
+  await writeFile(join(watched, 'recovered-root-marker.txt'), 'FERXIUM_TEST_SIGNATURE_v1');
+  await until(async () => {
+    const snapshot = await status();
+    assert.ok(snapshot.monitoring.workers_active <= snapshot.monitoring.worker_limit);
+    return (
+      snapshot.monitoring.health === 'healthy' &&
+      snapshot.threats.some((t) => t.path.endsWith('recovered-root-marker.txt'))
+    );
+  });
   console.log(
-    'Real service smoke passed: auth, native watcher, YARA, RenEngine indicators, quarantine, restore, delete, custom scan.',
+    'Real service smoke passed: auth, native watcher, YARA, RenEngine indicators, quarantine, restore, delete, custom scan, moved folders, unavailable-root recovery and health.',
   );
   console.log(`Isolated test state retained for inspection: ${root}`);
 } finally {

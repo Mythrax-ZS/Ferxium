@@ -32,6 +32,7 @@ import { open, save } from '@tauri-apps/plugin-dialog';
 import { listen } from '@tauri-apps/api/event';
 import { getStatus, native, sendAction } from './api';
 import { demo } from './demo';
+import { protectionPresentation } from './health';
 import type { Action, Config, ScanKind, Status, Threat } from './types';
 
 type Page = 'Dashboard' | 'Scans' | 'Quarantine' | 'Settings' | 'History';
@@ -186,6 +187,7 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
   const active = !!status?.protection_enabled && !!status?.watcher_active && !offline;
+  const protection = protectionPresentation(status, offline);
   const scanActive =
     !!status?.scan && ['running', 'paused', 'enumerating'].includes(status.scan.state);
   const pending = status?.threats.filter((t) => t.status === 'pending') ?? [];
@@ -321,7 +323,7 @@ export default function App() {
             </div>
           </div>
           <span className="version">
-            FerXium v{status?.version ?? '0.1.2'} <span>MIT LICENSE</span>
+            FerXium v{status?.version ?? '0.1.3'} <span>MIT LICENSE</span>
           </span>
         </div>
       </aside>
@@ -417,22 +419,14 @@ export default function App() {
 
           {page === 'Dashboard' && (
             <>
-              <section className={`protection-hero ${active ? 'active' : ''}`}>
+              <section className={`protection-hero ${protection.className}`}>
                 <div className="hero-copy">
                   <div className="status-label">
                     <span className="tiny-dot" />
-                    {active ? 'FILE MONITORING ACTIVE' : 'FILE MONITORING INACTIVE'}
+                    {protection.label}
                   </div>
-                  <h2>
-                    {active
-                      ? 'Watching over\nyour digital world.'
-                      : 'Your protection.\nReady when you are.'}
-                  </h2>
-                  <p>
-                    {active
-                      ? 'Local-first scanning is watching for file changes.\nYour files stay yours. Your data stays here.'
-                      : 'Connect the protection service and enable file monitoring to watch your selected folders.'}
-                  </p>
+                  <h2>{protection.title}</h2>
+                  <p>{protection.message}</p>
                   <div className="hero-actions">
                     <button
                       className="button primary"
@@ -453,7 +447,11 @@ export default function App() {
                   <div className="shield-grid" />
                   <div className="big-shield">
                     <Shield size={155} strokeWidth={0.8} />
-                    <Check size={59} strokeWidth={2.5} />
+                    {protection.className === 'active' ? (
+                      <Check size={59} strokeWidth={2.5} />
+                    ) : (
+                      <CircleHelp size={59} strokeWidth={1.5} />
+                    )}
                   </div>
                   <span className="shield-spark s1" />
                   <span className="shield-spark s2" />
@@ -575,11 +573,51 @@ export default function App() {
                   </span>
                 </div>
               </section>
+              {status?.monitoring && (
+                <section className="panel monitoring-health" aria-label="File monitoring health">
+                  <div className="panel-heading">
+                    <h3>Monitoring health</h3>
+                    <span className="subtle-tag">{status.monitoring.health.toUpperCase()}</span>
+                  </div>
+                  <div className="health-metrics">
+                    <span>
+                      <strong>{count(status.monitoring.queue_depth)}</strong> queued files
+                    </span>
+                    <span>
+                      <strong>
+                        {status.monitoring.workers_active}/{status.monitoring.worker_limit}
+                      </strong>{' '}
+                      scan workers
+                    </span>
+                    <span>
+                      <strong>{(status.monitoring.oldest_event_age_ms / 1000).toFixed(1)}s</strong>{' '}
+                      oldest queued change
+                    </span>
+                    <span>
+                      <strong>{count(status.monitoring.retry_count)}</strong> read retries
+                    </span>
+                  </div>
+                  <p className="muted-copy">
+                    {status.monitoring.recovery_in_progress
+                      ? 'Checking watched folders for missed changes.'
+                      : `Last watched-folder recovery: ${formatDate(status.monitoring.last_recovery_at)}`}
+                  </p>
+                  {status.monitoring.last_error && (
+                    <p className="health-error" role="status">
+                      {status.monitoring.last_error}
+                    </p>
+                  )}
+                </section>
+              )}
               {!!status?.dropped_events && (
                 <div className="banner warning" role="status">
                   <CircleHelp size={18} />
-                  {status.dropped_events} monitoring events were dropped or errored. Run a scan of
-                  your monitored folders to check missed changes.
+                  {status.dropped_events} event-loss or error signals this session.{' '}
+                  {protection.className === 'active'
+                    ? 'The last watched-folder recovery pass finished.'
+                    : status.protection_enabled
+                      ? 'Automatic recovery checks watched folders and retries incomplete scans.'
+                      : 'Watched-folder recovery resumes when monitoring is enabled.'}
                 </div>
               )}
               <div className="philosophy-strip">

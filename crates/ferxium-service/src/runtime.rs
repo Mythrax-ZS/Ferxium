@@ -9,7 +9,7 @@ use ferxium_core::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashSet,
     path::{Path, PathBuf},
     sync::{
         Arc, Mutex, RwLock,
@@ -34,6 +34,8 @@ struct Runtime {
     control: Option<Arc<AtomicU8>>,
     activity: Vec<Activity>,
     watcher_active: bool,
+    watcher_error: Option<String>,
+    monitoring: MonitoringStatus,
     watched_roots: Vec<PathBuf>,
     process_count: usize,
     network_received: u64,
@@ -41,14 +43,14 @@ struct Runtime {
     established_connections: Option<usize>,
 }
 pub struct App {
-    data: PathBuf,
+    pub(crate) data: PathBuf,
     state: Mutex<Runtime>,
     engine: RwLock<Arc<Scanner>>,
     vault: Mutex<Quarantine>,
     pub actions: tokio::sync::Mutex<()>,
-    pub dropped: Arc<AtomicU64>,
+    pub signals: Arc<realtime::WatchSignals>,
     pub shutdown: AtomicBool,
-    revision: AtomicU64,
+    pub(crate) revision: AtomicU64,
 }
 
 impl App {
@@ -91,6 +93,8 @@ impl App {
                 control: None,
                 activity: vec![],
                 watcher_active: false,
+                watcher_error: None,
+                monitoring: MonitoringStatus::default(),
                 watched_roots: vec![],
                 process_count: 0,
                 network_received: 0,
@@ -99,7 +103,7 @@ impl App {
             }),
             data,
             actions: tokio::sync::Mutex::new(()),
-            dropped: Arc::new(AtomicU64::new(0)),
+            signals: Arc::new(realtime::WatchSignals::default()),
             shutdown: AtomicBool::new(false),
             revision: AtomicU64::new(0),
         })
@@ -131,7 +135,8 @@ impl App {
             protection_enabled: state.config.protection_enabled,
             watcher_active: state.watcher_active,
             watched_roots: state.watched_roots.clone(),
-            dropped_events: self.dropped.load(Ordering::Relaxed),
+            dropped_events: self.signals.dropped_events.load(Ordering::Relaxed),
+            monitoring: state.monitoring.clone(),
             yara_enabled: engine.yara_enabled(),
             signature_version: engine.version,
             scanned_total: state.saved.scanned_total,
@@ -289,6 +294,7 @@ impl App {
         let engine = Scanner::new(database, BUNDLED_RULES)?;
         updater::install(&self.data.join("signatures.signed.json"), &envelope)?;
         *self.engine.write().unwrap() = Arc::new(engine);
+        self.signals.request_recovery();
         self.event("info", "Verified signature update installed. Active scans keep their original database snapshot.");
         Ok(())
     }
@@ -435,7 +441,7 @@ impl App {
         );
     }
 
-    fn walk<'a>(
+    pub(crate) fn walk<'a>(
         &'a self,
         root: &'a Path,
         config: &'a Config,
@@ -481,7 +487,7 @@ impl App {
         progress.elapsed_seconds = started.elapsed().as_secs();
         self.state.lock().unwrap().scan = Some(progress.clone());
     }
-    fn record_outcome(&self, outcome: FileOutcome) -> bool {
+    pub(crate) fn record_outcome(&self, outcome: FileOutcome) -> bool {
         let mut state = self.state.lock().unwrap();
         state.saved.scanned_total += 1;
         if let FileOutcome::Detected { threat } = outcome
@@ -500,14 +506,39 @@ impl App {
         }
         false
     }
+
+    pub(crate) fn monitor_snapshot(&self) -> (Config, Arc<Scanner>, bool, Option<String>, u64) {
+        let engine = self.engine.read().unwrap().clone();
+        let state = self.state.lock().unwrap();
+        (
+            state.config.clone(),
+            engine,
+            state.watcher_active,
+            state.watcher_error.clone(),
+            self.revision.load(Ordering::Acquire),
+        )
+    }
+
+    pub(crate) fn publish_monitoring(&self, status: MonitoringStatus) {
+        self.state.lock().unwrap().monitoring = status;
+    }
 }
 
-pub fn spawn_background(app: Arc<App>, tx: mpsc::Sender<PathBuf>, mut rx: mpsc::Receiver<PathBuf>) {
+pub fn spawn_background(
+    app: Arc<App>,
+    tx: mpsc::Sender<PathBuf>,
+    rx: mpsc::Receiver<PathBuf>,
+) -> tokio::task::JoinHandle<()> {
     let watcher_app = app.clone();
     let process_tx = tx.clone();
     tokio::task::spawn_blocking(move || {
         let mut revision = u64::MAX;
         let mut watcher = None;
+        let mut registered_roots = Vec::<PathBuf>::new();
+        let mut partial = false;
+        let mut watcher_errors = 0;
+        let mut retry_at = Instant::now();
+        let mut retry_delay = Duration::from_millis(500);
         let mut system = sysinfo::System::new();
         // Establish a baseline instead of queueing every running executable at
         // startup. That flood can delay file events; Quick Scan covers existing
@@ -517,29 +548,71 @@ pub fn spawn_background(app: Arc<App>, tx: mpsc::Sender<PathBuf>, mut rx: mpsc::
         let mut tick = 0u64;
         while !watcher_app.shutdown.load(Ordering::Acquire) {
             let current = watcher_app.revision.load(Ordering::Acquire);
-            if current != revision {
+            let errors = watcher_app.signals.watcher_errors.load(Ordering::Acquire);
+            let configured = watcher_app.state.lock().unwrap().config.clone();
+            let missing_root = watcher.is_some() && registered_roots.iter().any(|p| !p.exists());
+            if current != revision || errors != watcher_errors || missing_root {
                 watcher = None;
-                let config = watcher_app.state.lock().unwrap().config.clone();
-                if config.protection_enabled && !config.watch_paths.is_empty() {
-                    match realtime::watch(
-                        &config.watch_paths,
-                        tx.clone(),
-                        watcher_app.dropped.clone(),
-                    ) {
-                        Ok(w) => watcher = Some(w),
-                        Err(error) => {
-                            watcher_app.event("error", &format!("File watcher failed: {error}"))
+                registered_roots.clear();
+                retry_at = Instant::now();
+                retry_delay = Duration::from_millis(500);
+                watcher_errors = errors;
+                revision = current;
+                watcher_app.signals.request_recovery();
+            }
+            if (watcher.is_none() || partial)
+                && configured.protection_enabled
+                && !configured.watch_paths.is_empty()
+                && Instant::now() >= retry_at
+            {
+                let config = configured.clone();
+                match realtime::register(
+                    &config.watch_paths,
+                    tx.clone(),
+                    watcher_app.signals.clone(),
+                ) {
+                    Ok(registration) => {
+                        partial = !registration.errors.is_empty();
+                        registered_roots = registration.active_roots;
+                        watcher = if registered_roots.is_empty() {
+                            None
+                        } else {
+                            Some(registration.watcher)
+                        };
+                        watcher_app.state.lock().unwrap().watcher_error = if partial {
+                            Some(format!("Some watched folders are unavailable; retrying automatically: {}", registration.errors.join("; ")).chars().take(500).collect())
+                        } else {
+                            None
+                        };
+                        if partial {
+                            retry_at = Instant::now() + retry_delay;
+                            retry_delay = (retry_delay * 2).min(Duration::from_secs(30));
+                        } else {
+                            retry_delay = Duration::from_millis(500);
                         }
+                        watcher_app.signals.request_recovery();
+                        watcher_app.event("info", "Native file monitoring registered; checking watched folders for missed changes.");
+                    }
+                    Err(error) => {
+                        partial = true;
+                        let message =
+                            format!("File watcher unavailable; retrying automatically: {error}");
+                        watcher_app.state.lock().unwrap().watcher_error =
+                            Some(message.chars().take(500).collect());
+                        watcher_app.event("warning", "A watched folder is unavailable. File monitoring will retry automatically.");
+                        retry_at = Instant::now() + retry_delay;
+                        retry_delay = (retry_delay * 2).min(Duration::from_secs(30));
                     }
                 }
+            }
+            {
                 let mut state = watcher_app.state.lock().unwrap();
                 state.watcher_active = watcher.is_some();
                 state.watched_roots = if watcher.is_some() {
-                    config.watch_paths
+                    registered_roots.clone()
                 } else {
                     vec![]
                 };
-                revision = current;
             }
             if tick.is_multiple_of(10) {
                 system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
@@ -555,7 +628,7 @@ pub fn spawn_background(app: Arc<App>, tx: mpsc::Sender<PathBuf>, mut rx: mpsc::
                         && let Some(path) = process.exe()
                         && process_tx.try_send(path.to_path_buf()).is_err()
                     {
-                        watcher_app.dropped.fetch_add(1, Ordering::Relaxed);
+                        watcher_app.signals.record_drop();
                     }
                 }
                 known = Some(next);
@@ -575,32 +648,7 @@ pub fn spawn_background(app: Arc<App>, tx: mpsc::Sender<PathBuf>, mut rx: mpsc::
         }
         drop(watcher);
     });
-    let realtime_app = app.clone();
-    tokio::spawn(async move {
-        let mut pending = HashMap::<PathBuf, Instant>::new();
-        let mut tick = tokio::time::interval(Duration::from_millis(300));
-        loop {
-            tokio::select! {
-                path = rx.recv() => { if let Some(path) = path { if pending.len() < 4096 { pending.insert(path, Instant::now()); } else { realtime_app.dropped.fetch_add(1, Ordering::Relaxed); } } else { break; } },
-                _ = tick.tick() => {
-                    if realtime_app.shutdown.load(Ordering::Acquire) { break; }
-                    let ready: Vec<_> = pending.iter().filter(|(_, at)| at.elapsed() >= Duration::from_millis(600)).take(64).map(|(p, _)| p.clone()).collect();
-                    for path in ready {
-                        pending.remove(&path);
-                        let config = realtime_app.state.lock().unwrap().config.clone();
-                        if !config.protection_enabled || config::normalize_path(&path).starts_with(&realtime_app.data) || !path.is_file() { continue; }
-                        let app = realtime_app.clone(); let engine = app.engine.read().unwrap().clone();
-                        let _ = tokio::task::spawn_blocking(move || {
-                            match engine.scan_file(&path, &config) {
-                                Ok(outcome) => { if app.record_outcome(outcome) && let Err(e) = app.persist() { app.event("error", &format!("Unable to persist detection: {e}")); } },
-                                Err(_) => app.event("warning", "A changed file could not be read. Run a custom scan if it remains inaccessible."),
-                            }
-                        }).await;
-                    }
-                }
-            }
-        }
-    });
+    let monitor = crate::monitor::spawn(app.clone(), rx);
     tokio::spawn(async move {
         let mut tick = tokio::time::interval(Duration::from_secs(60));
         let mut last_scan = Instant::now();
@@ -639,12 +687,140 @@ pub fn spawn_background(app: Arc<App>, tx: mpsc::Sender<PathBuf>, mut rx: mpsc::
             }
         }
     });
+    monitor
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use ferxium_core::scanner::Md5Signature;
+
+    fn monitoring_fixture() -> (tempfile::TempDir, Arc<App>, PathBuf) {
+        let dir = tempfile::tempdir().unwrap();
+        let data = dir.path().join("state");
+        let watched = dir.path().join("watched");
+        storage::private_dir(&data).unwrap();
+        std::fs::create_dir(&watched).unwrap();
+        let watched = watched.canonicalize().unwrap();
+        let config = Config {
+            watch_paths: vec![watched.clone()],
+            ..Config::default()
+        };
+        storage::write_json(&data.join("config.json"), &config).unwrap();
+        let app = Arc::new(App::load(data).unwrap());
+        *app.engine.write().unwrap() = Arc::new(
+            Scanner::new(
+                SignatureDatabase {
+                    version: 1,
+                    published_at: Utc::now(),
+                    signatures: vec![],
+                    md5_signatures: vec![Md5Signature {
+                        md5: "900150983cd24fb0d6963f7d28e17f72".into(),
+                        name: "Harmless.RecoveryFixture".into(),
+                        severity: Severity::Low,
+                        description: "Inert abc bytes used to check recovery".into(),
+                    }],
+                },
+                BUNDLED_RULES,
+            )
+            .unwrap(),
+        );
+        // Deliberately omit a native watcher to inject lost delivery. Native
+        // backends are exercised independently by core and packaged smoke tests.
+        app.state.lock().unwrap().watcher_active = true;
+        (dir, app, watched)
+    }
+
+    async fn until_status(app: &App, predicate: impl Fn(&ServiceStatus) -> bool) -> ServiceStatus {
+        tokio::time::timeout(Duration::from_secs(25), async {
+            loop {
+                let status = app.snapshot().unwrap();
+                assert!(status.monitoring.workers_active <= 3);
+                assert!(status.monitoring.queue_depth <= 4097);
+                if predicate(&status) {
+                    return status;
+                }
+                tokio::time::sleep(Duration::from_millis(20)).await;
+            }
+        })
+        .await
+        .unwrap_or_else(|_| {
+            let status = app.snapshot().unwrap();
+            panic!("Monitoring did not reach the expected state: {:?}, threats={}, scanned={}, generation={}", status.monitoring, status.threats.len(), status.scanned_total, app.signals.recovery_generation.load(Ordering::Acquire));
+        })
+    }
+
+    #[tokio::test]
+    async fn overflow_recovery_finds_a_file_with_no_delivered_event_after_a_large_burst() {
+        let (_dir, app, watched) = monitoring_fixture();
+        let (tx, rx) = mpsc::channel(1);
+        let monitor = crate::monitor::spawn(app.clone(), rx);
+        until_status(&app, |s| {
+            matches!(s.monitoring.health, MonitoringHealth::Healthy)
+        })
+        .await;
+        let signals = app.signals.clone();
+        let _sender = tokio::task::spawn_blocking(move || {
+            for index in 0..2048 {
+                let file = watched.join(format!("benign-{index:04}.txt"));
+                std::fs::write(&file, b"ordinary fixture").unwrap();
+                if tx.try_send(file).is_err() {
+                    signals.record_drop();
+                }
+            }
+            // This path is never delivered to the queue. Recovery must find it.
+            std::fs::write(watched.join("missed-inert-fixture.txt"), b"abc").unwrap();
+            signals.record_drop();
+            // Keep the sender alive until recovery settles.
+            tx
+        })
+        .await
+        .unwrap();
+        let status = until_status(&app, |s| {
+            s.threats
+                .iter()
+                .any(|t| t.path.ends_with("missed-inert-fixture.txt"))
+                && matches!(s.monitoring.health, MonitoringHealth::Healthy)
+                && s.monitoring.queue_depth == 0
+                && s.monitoring.workers_active == 0
+        })
+        .await;
+        assert!(status.dropped_events > 0);
+        assert!(status.monitoring.recovery_count >= 2);
+        assert!(status.scanned_total >= 2049);
+        assert_eq!(status.threats.len(), 1);
+        app.shutdown.store(true, Ordering::Release);
+        monitor.await.unwrap();
+    }
+
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn locked_file_is_retried_and_detected_after_the_writer_releases_it() {
+        use std::{io::Write, os::windows::fs::OpenOptionsExt};
+        let (_dir, app, watched) = monitoring_fixture();
+        let (tx, rx) = mpsc::channel(1);
+        let monitor = crate::monitor::spawn(app.clone(), rx);
+        until_status(&app, |s| {
+            matches!(s.monitoring.health, MonitoringHealth::Healthy)
+        })
+        .await;
+        let path = watched.join("locked-inert-fixture.txt");
+        let mut writer = std::fs::OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .share_mode(0)
+            .open(&path)
+            .unwrap();
+        writer.write_all(b"abc").unwrap();
+        tx.send(path).await.unwrap();
+        until_status(&app, |s| s.monitoring.retry_count > 0).await;
+        drop(writer);
+        let status = until_status(&app, |s| !s.threats.is_empty()).await;
+        assert_eq!(status.threats.len(), 1);
+        assert_eq!(status.monitoring.scan_failures, 0);
+        app.shutdown.store(true, Ordering::Release);
+        monitor.await.unwrap();
+    }
 
     #[tokio::test]
     async fn repeat_scans_count_detections_without_duplicate_history() {

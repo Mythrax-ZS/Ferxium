@@ -12,6 +12,8 @@ This repository implements working scanning, filesystem monitoring, encrypted qu
 
 Version 0.1.2 adds four published legacy hash indicators and five static rules for the RenEngine / RenPy Loader campaign described by Malwarebytes. See [threat coverage and its limits](docs/THREAT_COVERAGE.md). Rules run locally; compressed/encrypted archives and process memory are outside current coverage.
 
+Version 0.1.3 adds automatic watched-folder recovery, bounded scan workers, transient-read retries and explicit monitoring health. See [real-time behavior, tests and limits](docs/REALTIME.md).
+
 ## Monorepo
 
 ```text

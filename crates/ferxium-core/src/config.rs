@@ -59,15 +59,20 @@ impl Config {
         );
         for p in self.watch_paths.iter().chain(&self.exclusions) {
             ensure!(p.is_absolute(), "Paths must be absolute");
-            ensure!(p.exists(), "Path does not exist: {}", p.display());
             ensure!(
                 !p.components().any(|c| c == std::path::Component::ParentDir),
                 "Parent traversal is not allowed"
             );
-            ensure!(
-                !std::fs::symlink_metadata(p)?.file_type().is_symlink(),
-                "Symlink roots are not allowed"
-            );
+            match std::fs::symlink_metadata(p) {
+                Ok(metadata) => ensure!(
+                    !metadata.file_type().is_symlink(),
+                    "Symlink roots are not allowed"
+                ),
+                Err(error)
+                    if error.kind() == std::io::ErrorKind::NotFound
+                        && self.watch_paths.contains(p) => {}
+                Err(error) => return Err(error.into()),
+            }
         }
         for hash in &self.allowed_hashes {
             ensure!(valid_hash(hash), "Invalid SHA-256 hash");

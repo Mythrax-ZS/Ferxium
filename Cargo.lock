@@ -1128,7 +1128,7 @@ dependencies = [
 
 [[package]]
 name = "ferxium-cli"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "anyhow",
  "clap",
@@ -1141,7 +1141,7 @@ dependencies = [
 
 [[package]]
 name = "ferxium-core"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "anyhow",
  "chacha20poly1305",
@@ -1171,7 +1171,7 @@ dependencies = [
 
 [[package]]
 name = "ferxium-desktop"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "ferxium-core",
  "reqwest 0.12.28",
@@ -1185,7 +1185,7 @@ dependencies = [
 
 [[package]]
 name = "ferxium-service"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "anyhow",
  "axum",

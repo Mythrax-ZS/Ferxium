@@ -235,9 +235,53 @@ pub fn open_regular(path: &Path) -> Result<File> {
     Ok(file)
 }
 
+/// Identify the opened object, rather than trusting a reusable pathname.
+pub fn file_identity(file: &File) -> Result<(u64, u64)> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        let metadata = file.metadata()?;
+        Ok((metadata.dev(), metadata.ino()))
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::io::AsRawHandle;
+        use windows_sys::Win32::Storage::FileSystem::{
+            BY_HANDLE_FILE_INFORMATION, GetFileInformationByHandle,
+        };
+        // SAFETY: this Win32 plain-data output structure permits zero initialization.
+        let mut info: BY_HANDLE_FILE_INFORMATION = unsafe { std::mem::zeroed() };
+        // SAFETY: the handle belongs to the live File and info is an initialized,
+        // writable structure; the checked API call does not retain pointers.
+        if unsafe { GetFileInformationByHandle(file.as_raw_handle(), &mut info) } == 0 {
+            return Err(std::io::Error::last_os_error().into());
+        }
+        Ok((
+            u64::from(info.dwVolumeSerialNumber),
+            (u64::from(info.nFileIndexHigh) << 32) | u64::from(info.nFileIndexLow),
+        ))
+    }
+}
+
 #[cfg(test)]
 mod identity_tests {
     use super::*;
+
+    #[test]
+    fn opened_file_identity_survives_rename_and_distinguishes_a_replacement() {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join("inert.txt");
+        fs::write(&path, b"ordinary fixture").unwrap();
+        let file = open_regular(&path).unwrap();
+        let identity = file_identity(&file).unwrap();
+        fs::rename(&path, root.path().join("renamed.txt")).unwrap();
+        fs::write(&path, b"ordinary fixture").unwrap();
+        assert_eq!(file_identity(&file).unwrap(), identity);
+        assert_ne!(
+            file_identity(&open_regular(&path).unwrap()).unwrap(),
+            identity
+        );
+    }
 
     #[test]
     fn rename_preserves_legacy_state_and_refuses_ambiguous_vaults() -> Result<()> {

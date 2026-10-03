@@ -20,6 +20,8 @@ Validated locally on Windows with Rust 1.98.1, Node.js 24.16.0, MSVC native tool
 
 ## Native packages
 
+Version 0.1.3 adds deterministic recovery after a 2,048-file burst with an intentionally undelivered matching-file event, worker/queue bounds, debounce deadlines, priority fairness, Windows sharing-lock retries, file-identity replacement checks and partial-root availability. Packaged service smoke also verifies moved-in folders, degraded health while a root is missing and automatic recovery after recreation. See [monitoring validation and limits](REALTIME.md).
+
 - Windows: extracted the release NSIS payload and confirmed the desktop, service, and CLI executables are present. Ran the packaged service smoke test as a regular user.
 - Windows desktop 0.1.2: launched an isolated copy without the companion service, delivered native window-close and tray-click notifications, and verified the window hides while its process and tray survive. Verified tray reopening and restoration from a minimized state, then invoked the actual native tray Quit menu and checked a clean exit. macOS Dock reopening is compiled and checked by native macOS builds; it has not been exercised interactively from this workspace.
 - Linux: extracted the release Debian package into an isolated Ubuntu 24.04 environment. Checked its declared GTK/WebKit/AppIndicator/OpenSSL runtime dependencies and service library resolution, ran the CLI, and passed the packaged service smoke test as a regular user.

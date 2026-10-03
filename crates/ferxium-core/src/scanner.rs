@@ -91,6 +91,40 @@ pub struct Scanner {
     yara: YaraEngine,
 }
 
+#[derive(Debug)]
+pub struct FileChanged;
+
+impl std::fmt::Display for FileChanged {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("File changed while it was being scanned")
+    }
+}
+
+impl std::error::Error for FileChanged {}
+
+fn verify_read(
+    path: &Path,
+    file: &std::fs::File,
+    before: &std::fs::Metadata,
+    identity: (u64, u64),
+    bytes_len: u64,
+) -> Result<()> {
+    let after = file.metadata()?;
+    // Reopen using no-follow checks before attaching a verdict to this pathname.
+    let current = open_regular(path)?;
+    let current_metadata = current.metadata()?;
+    if bytes_len != before.len()
+        || after.len() != before.len()
+        || after.modified().ok() != before.modified().ok()
+        || crate::storage::file_identity(&current)? != identity
+        || current_metadata.len() != after.len()
+        || current_metadata.modified().ok() != after.modified().ok()
+    {
+        return Err(FileChanged.into());
+    }
+    Ok(())
+}
+
 impl Scanner {
     pub fn new(database: SignatureDatabase, rules: &str) -> Result<Self> {
         Ok(Self {
@@ -124,20 +158,24 @@ impl Scanner {
                 reason: "Excluded path".into(),
             });
         }
-        let file = open_regular(path)?;
-        if file.metadata()?.len() > config.max_file_bytes {
+        let mut file = open_regular(path)?;
+        let before = file.metadata()?;
+        let identity = crate::storage::file_identity(&file)?;
+        if before.len() > config.max_file_bytes {
             return Ok(FileOutcome::Skipped {
                 reason: "File exceeds configured limit".into(),
             });
         }
         let mut bytes = Vec::new();
-        file.take(config.max_file_bytes + 1)
+        (&mut file)
+            .take(config.max_file_bytes + 1)
             .read_to_end(&mut bytes)?;
         if bytes.len() as u64 > config.max_file_bytes {
             return Ok(FileOutcome::Skipped {
                 reason: "File grew beyond limit".into(),
             });
         }
+        verify_read(path, &file, &before, identity, bytes.len() as u64)?;
         let hash = hex::encode(Sha256::digest(&bytes));
         if config.allowed_hashes.contains(&hash) {
             return Ok(FileOutcome::Skipped {
@@ -331,6 +369,36 @@ pub fn quick_roots() -> Vec<PathBuf> {
 
 #[cfg(test)]
 mod eicar_tests {
+    #[test]
+    fn read_guard_rejects_a_same_size_replacement_and_an_in_place_change() {
+        use super::*;
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("inert.txt");
+        std::fs::write(&path, b"abc").unwrap();
+        let file = open_regular(&path).unwrap();
+        let before = file.metadata().unwrap();
+        let identity = crate::storage::file_identity(&file).unwrap();
+        verify_read(&path, &file, &before, identity, 3).unwrap();
+        std::fs::rename(&path, dir.path().join("original.txt")).unwrap();
+        std::fs::write(&path, b"abc").unwrap();
+        assert!(
+            verify_read(&path, &file, &before, identity, 3)
+                .unwrap_err()
+                .downcast_ref::<FileChanged>()
+                .is_some()
+        );
+        let file = open_regular(&path).unwrap();
+        let before = file.metadata().unwrap();
+        let identity = crate::storage::file_identity(&file).unwrap();
+        std::fs::write(&path, b"abcdef").unwrap();
+        assert!(
+            verify_read(&path, &file, &before, identity, 3)
+                .unwrap_err()
+                .downcast_ref::<FileChanged>()
+                .is_some()
+        );
+    }
+
     #[test]
     fn encoded_matcher_accepts_eicar_and_newlines_but_rejects_near_misses() {
         // Test bytes directly: an installed AV may intercept harmless EICAR

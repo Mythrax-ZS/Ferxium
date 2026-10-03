@@ -4,7 +4,7 @@
 
 The service is a **current-user** application. It cannot protect its state from an attacker who already executes code as that user or as an administrator. It must not become a root/admin broker for lower-trust desktop clients. Windows and Unix startup refuse elevation. Kernel prevention and tamper resistance need a separate design, authenticated OS IPC, constrained handles, and independent review.
 
-The engine reads untrusted bytes but never executes them. Regular-file checks, no-follow flags, a maximum input size, native YARA timeouts, streaming walkers, bounded event queues, and limited retained reports constrain common resource attacks. Native YARA remains an additional C dependency and should eventually be isolated in a restricted worker. The service currently has one background scan plus serialized real-time file workers.
+The engine reads untrusted bytes but never executes them. Regular-file checks, no-follow flags, a maximum input size, native YARA timeouts, streaming walkers, bounded event queues, and limited retained reports constrain common resource attacks. Native YARA remains an additional C dependency and should eventually be isolated in a restricted worker. The service has at most two foreground monitoring workers, one reserved reconciliation worker and one separate user/scheduled scan. See [monitoring and recovery](REALTIME.md) for limits and validation.
 
 ## IPC
 
@@ -16,7 +16,7 @@ This is a local same-user transport, not mutual service identity authentication.
 
 ## Detection and visibility
 
-Native watchers observe filesystem events after they happen. They do not deny open/execute access. Process polling establishes a startup baseline and checks newly observed identities every five seconds; it can miss short-lived processes. Quick Scan checks existing process executables. Only executable files are scanned, not memory. Network summaries are sampled local socket/interface metadata, not traffic inspection or prevention. A watcher error or full queue increments a visible dropped-event counter; there is no guaranteed replay/reconciliation yet.
+Native watchers observe filesystem events after they happen. They do not deny open/execute access. Process polling establishes a startup baseline and checks newly observed identities every five seconds; it can miss short-lived processes. Quick Scan checks existing process executables. Only executable files are scanned, not memory. Network summaries are sampled local socket/interface metadata, not traffic inspection or prevention. Watcher errors, overflow and rescan flags request automatic watched-folder reconciliation. Generation tracking preserves signals arriving during recovery but cannot reconstruct historical process activity or removed files. Persistent scan/watch errors and long backlogs surface as degraded monitoring.
 
 Scans use the initiating configuration and engine snapshot. Changing settings or signatures affects later jobs. Full traversal omits state, staging directories, symlinks, special files and Linux pseudo filesystems. Exclusions and maximum file size reduce coverage. A heuristic finding is a review signal, not a malware verdict. Bundled hashes/rules contain harmless tests and targeted published indicators; see [campaign coverage](THREAT_COVERAGE.md). Legacy MD5 matches identify reported samples; MD5 is never used for allowlisting, quarantine integrity, or feed authentication. No claim is made of comprehensive malware detection or independent certification.
 

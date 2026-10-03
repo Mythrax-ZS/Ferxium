@@ -1,4 +1,5 @@
 mod api;
+mod monitor;
 mod runtime;
 
 use anyhow::{Context, Result};
@@ -62,7 +63,7 @@ async fn main() -> Result<()> {
         "Service started. Scans and activity remain on this device.",
     );
     let (tx, rx) = tokio::sync::mpsc::channel(4096);
-    runtime::spawn_background(app.clone(), tx, rx);
+    let monitor = runtime::spawn_background(app.clone(), tx, rx);
     tracing::info!("Local protection service ready (no remote access, no telemetry)");
     let router = api::router(app.clone(), token);
     let result = axum::serve(listener, router)
@@ -77,6 +78,9 @@ async fn main() -> Result<()> {
         }
         tokio::time::sleep(std::time::Duration::from_millis(50)).await;
     }
+    monitor
+        .await
+        .context("File monitoring failed during shutdown")?;
     app.persist()?;
     let _ = std::fs::remove_file(data.join("service.json"));
     result?;

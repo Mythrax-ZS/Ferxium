@@ -1,13 +1,26 @@
 import type { Status } from './types';
 const now = new Date().toISOString();
 export const demo: Status = {
-  version: '0.1.2',
+  version: '0.1.3',
   protection_enabled: true,
   watcher_active: true,
   watched_roots: ['C:\\Users\\You\\Downloads', 'C:\\Users\\You\\Desktop'],
   dropped_events: 0,
+  monitoring: {
+    health: 'healthy',
+    queue_depth: 0,
+    workers_active: 0,
+    worker_limit: 3,
+    oldest_event_age_ms: 0,
+    recovery_in_progress: false,
+    recovery_count: 1,
+    last_recovery_at: now,
+    retry_count: 0,
+    scan_failures: 0,
+    last_error: null,
+  },
   yara_enabled: true,
-  signature_version: 1,
+  signature_version: 2,
   scanned_total: 128492,
   process_count: 142,
   network_received: 8391923,
@@ -36,7 +49,7 @@ export const demo: Status = {
   activity: [
     { at: now, level: 'info', message: 'Quick scan complete. No detections in checked files.' },
     { at: now, level: 'info', message: 'Native file monitoring is watching 2 folders.' },
-    { at: now, level: 'info', message: 'Signature database v1 is ready.' },
+    { at: now, level: 'info', message: 'Signature database v2 is ready.' },
   ],
   config: {
     protection_enabled: true,

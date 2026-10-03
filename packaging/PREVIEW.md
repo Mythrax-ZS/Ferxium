@@ -1,6 +1,13 @@
-# FerXium 0.1.2 preview builds
+# FerXium 0.1.3 preview builds
 
-Adds four valid published legacy MD5 indicators and five original YARA patterns
+Adds automatic watched-folder reconciliation after missed events, bounded
+foreground workers, retries for transient file-read failures, watch-root recovery
+and explicit recovering/degraded health in the desktop. Checks files already
+present when monitoring starts and folders moved into watched locations.
+See [monitoring behavior and limits](https://github.com/Mythrax-ZS/Ferxium/blob/main/docs/REALTIME.md).
+This remains after-change scanning; no execution gate or automatic quarantine is added.
+
+Retains four valid published legacy MD5 indicators and five original YARA patterns
 for the RenEngine / RenPy Loader chain described by Malwarebytes on July 20, 2026.
 Coverage is local and static; encrypted archives and process memory remain outside
 current scanning. See [coverage notes](https://github.com/Mythrax-ZS/Ferxium/blob/main/docs/THREAT_COVERAGE.md).

@@ -359,6 +359,35 @@ h1 {
 .status-label .tiny-dot {
   box-shadow: 0 0 7px #00f0ff70;
 }
+.protection-hero.degraded .status-label,
+.protection-hero.degraded .big-shield {
+  color: var(--red);
+}
+.protection-hero.degraded .tiny-dot {
+  background: var(--red);
+  box-shadow: 0 0 7px #f28c9670;
+}
+.protection-hero.inactive .shield-scene {
+  opacity: 0.5;
+}
+.monitoring-health {
+  margin-bottom: 18px;
+}
+.health-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.health-metrics strong {
+  color: var(--text);
+}
+.health-error {
+  color: var(--red);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
 .hero-copy {
   z-index: 2;
   flex: 1;

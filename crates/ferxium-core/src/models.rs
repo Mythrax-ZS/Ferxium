@@ -91,12 +91,57 @@ pub struct QuarantineEntry {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MonitoringHealth {
+    Disabled,
+    Starting,
+    Healthy,
+    Recovering,
+    Degraded,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MonitoringStatus {
+    pub health: MonitoringHealth,
+    pub queue_depth: usize,
+    pub workers_active: usize,
+    pub worker_limit: usize,
+    pub oldest_event_age_ms: u64,
+    pub recovery_in_progress: bool,
+    pub recovery_count: u64,
+    pub last_recovery_at: Option<DateTime<Utc>>,
+    pub retry_count: u64,
+    pub scan_failures: u64,
+    pub last_error: Option<String>,
+}
+
+impl Default for MonitoringStatus {
+    fn default() -> Self {
+        Self {
+            health: MonitoringHealth::Starting,
+            queue_depth: 0,
+            workers_active: 0,
+            worker_limit: 3,
+            oldest_event_age_ms: 0,
+            recovery_in_progress: false,
+            recovery_count: 0,
+            last_recovery_at: None,
+            retry_count: 0,
+            scan_failures: 0,
+            last_error: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServiceStatus {
     pub version: String,
     pub protection_enabled: bool,
     pub watcher_active: bool,
     pub watched_roots: Vec<PathBuf>,
     pub dropped_events: u64,
+    #[serde(default)]
+    pub monitoring: MonitoringStatus,
     pub yara_enabled: bool,
     pub signature_version: u64,
     pub scanned_total: u64,

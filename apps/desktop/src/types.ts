@@ -61,6 +61,19 @@ export interface Status {
   watcher_active: boolean;
   watched_roots: string[];
   dropped_events: number;
+  monitoring?: {
+    health: 'disabled' | 'starting' | 'healthy' | 'recovering' | 'degraded';
+    queue_depth: number;
+    workers_active: number;
+    worker_limit: number;
+    oldest_event_age_ms: number;
+    recovery_in_progress: boolean;
+    recovery_count: number;
+    last_recovery_at: string | null;
+    retry_count: number;
+    scan_failures: number;
+    last_error: string | null;
+  };
   yara_enabled: boolean;
   signature_version: number;
   scanned_total: number;

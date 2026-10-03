@@ -7,12 +7,13 @@ const sections = [
     icon: 'zap',
     title: 'Real-time awareness.',
     label: 'STAY IN THE LOOP',
-    text: 'Native filesystem watchers scan created and modified files in your selected folders. A bounded, debounced queue keeps bursts manageable and makes dropped events visible.',
+    text: 'Native filesystem watchers scan created and modified files in your selected folders. Bounded workers keep collecting events during scans, and automatic reconciliation checks watched folders after missed changes.',
     items: [
       'inotify on Linux, ReadDirectoryChangesW on Windows, FSEvents on macOS',
       'Sampled process creation awareness through running executable scans',
       'Local interface traffic counters; no network blocking',
-      'Explicit coverage status and configurable exclusions',
+      'Automatic watch-root recovery, transient-read retries, and configurable exclusions',
+      'Explicit active, recovering, and degraded monitoring health',
     ],
   },
   {
