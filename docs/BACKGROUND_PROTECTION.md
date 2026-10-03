@@ -86,6 +86,10 @@ starts protection again. If startup repeatedly fails, stop the supervisor and
 run the service in the foreground to inspect diagnostics. Back up complete
 private state before repairs, particularly the quarantine encryption key.
 
+Previews before 0.1.4 do not support `--stop`. Stop their foreground terminal or
+startup manager, or end your own `ferxium-service` process using Task Manager or
+Activity Monitor, before installing an update. Keep the private state and vault.
+
 ## Validation
 
 `scripts/supervisor-smoke.mjs` starts isolated supervised state, rejects a

@@ -27,6 +27,7 @@ const supervisor = spawn(binary, ['--supervise', '--data-dir', data], {
   env: { ...process.env, RUST_LOG: 'warn' },
 });
 let logs = '';
+let latestStatus;
 for (const stream of [supervisor.stdout, supervisor.stderr]) {
   stream.on('data', (chunk) => {
     logs = (logs + chunk.toString()).slice(-2000);
@@ -45,7 +46,16 @@ async function until(check, description) {
     }
     await delay(100);
   }
-  throw new Error(`Timed out: ${description}. Supervisor logs: ${logs}`);
+  const diagnostic = latestStatus && {
+    watcher_active: latestStatus.watcher_active,
+    yara_enabled: latestStatus.yara_enabled,
+    scanned_total: latestStatus.scanned_total,
+    monitoring: latestStatus.monitoring,
+    findings: latestStatus.threats.slice(0, 10).map((t) => ({ path: t.path, status: t.status })),
+  };
+  throw new Error(
+    `Timed out: ${description}. Supervisor logs: ${logs}. Status: ${JSON.stringify(diagnostic)}`,
+  );
 }
 async function discovery() {
   return JSON.parse(await readFile(join(data, 'service.json'), 'utf8'));
@@ -59,7 +69,8 @@ async function status(connection) {
     signal: AbortSignal.timeout(2000),
   });
   assert.ok(response.ok, 'Authenticated status should succeed');
-  return response.json();
+  latestStatus = await response.json();
+  return latestStatus;
 }
 async function exited(child) {
   if (child.exitCode !== null || child.signalCode !== null) return child.exitCode;
@@ -135,13 +146,19 @@ try {
     const fixture = join(watched, `inert-after-restart-${crash}.txt`);
     await writeFile(fixture, 'FERXIUM_TEST_SIGNATURE_v1');
     const canonicalFixture = toNamespacedPath(await realpath(fixture));
-    await until(
-      async () =>
-        (await status(connection)).threats.some(
-          (t) => toNamespacedPath(t.path) === canonicalFixture && t.status === 'pending',
-        ),
-      'file detection after recovery',
-    );
+    await until(async () => {
+      const candidates = (await status(connection)).threats.filter((t) => t.status === 'pending');
+      const matches = await Promise.all(
+        candidates.map(async (t) => {
+          try {
+            return toNamespacedPath(await realpath(t.path)) === canonicalFixture;
+          } catch {
+            return false;
+          }
+        }),
+      );
+      return matches.some(Boolean);
+    }, 'file detection after recovery');
   }
   await execute(binary, ['--stop', '--data-dir', data], { windowsHide: true, timeout: 20_000 });
   assert.equal(await exited(supervisor), 0, 'Intentional stop should be clean');

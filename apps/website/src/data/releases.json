@@ -1,40 +1,40 @@
 {
-  "version": "0.1.3",
+  "version": "0.1.4",
   "status": "preview",
   "assets": [
     {
       "platform": "linux",
       "architecture": "x86_64",
-      "name": "FerXium-0.1.3-linux-x86_64.deb",
-      "url": "https://ferxium.org/downloads/FerXium-0.1.3-linux-x86_64.deb",
-      "sha256": "8f617eeec0f2bdeb60a9169b42c8926447c4589bfb5f00f08e7c47dfc228c477",
+      "name": "FerXium-0.1.4-linux-x86_64.deb",
+      "url": "https://ferxium.org/downloads/FerXium-0.1.4-linux-x86_64.deb",
+      "sha256": "6001a9e2d6ff98b78c69063014e62349053d7a4d6173cf5204c00375a4c80f8d",
       "signed": false,
       "kind": "installer"
     },
     {
       "platform": "macos",
       "architecture": "aarch64",
-      "name": "FerXium-0.1.3-macos-aarch64.dmg",
-      "url": "https://ferxium.org/downloads/FerXium-0.1.3-macos-aarch64.dmg",
-      "sha256": "4a6896044d83e5374d96d46a2bf152a80edda4af1ef2e0206cb2bdc27a3986fe",
+      "name": "FerXium-0.1.4-macos-aarch64.dmg",
+      "url": "https://ferxium.org/downloads/FerXium-0.1.4-macos-aarch64.dmg",
+      "sha256": "79335525230486800dbcc21ea0452f47cecd576971e73fa5f0e0591b605c0f49",
       "signed": false,
       "kind": "installer"
     },
     {
       "platform": "macos",
       "architecture": "x86_64",
-      "name": "FerXium-0.1.3-macos-x86_64.dmg",
-      "url": "https://ferxium.org/downloads/FerXium-0.1.3-macos-x86_64.dmg",
-      "sha256": "966561922c54291173e4a059a702dd1ddc7cb15066aa59d396987c65ec34ef94",
+      "name": "FerXium-0.1.4-macos-x86_64.dmg",
+      "url": "https://ferxium.org/downloads/FerXium-0.1.4-macos-x86_64.dmg",
+      "sha256": "ce60a06c603ddcf8d1eabcfb9307288d577e0211921e064e444af9a2803eaa76",
       "signed": false,
       "kind": "installer"
     },
     {
       "platform": "windows",
       "architecture": "x86_64",
-      "name": "FerXium-0.1.3-windows-x86_64-setup.exe",
-      "url": "https://ferxium.org/downloads/FerXium-0.1.3-windows-x86_64-setup.exe",
-      "sha256": "b6ce740dafd53c3bb32cf134e770253fa316105e85596be495953cc5670a0e8d",
+      "name": "FerXium-0.1.4-windows-x86_64-setup.exe",
+      "url": "https://ferxium.org/downloads/FerXium-0.1.4-windows-x86_64-setup.exe",
+      "sha256": "61f8ab86b7b0fb8a34e442eb80112ed12a8c9d6e5499225ac120f64f0df2e926",
       "signed": false,
       "kind": "installer"
     }

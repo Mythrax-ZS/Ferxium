@@ -38,6 +38,8 @@ jobs:
           node-version: '24'
           cache: npm
       - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - if: runner.os == 'Linux'
         run: |
           sudo apt-get update
@@ -48,6 +50,7 @@ jobs:
       - run: cargo test --locked
       - run: cargo test --locked -p ferxium-core --features yara-engine
       - run: npm run tauri -- build --bundles ${{ matrix.bundle }} --ci
+      - run: python scripts/collect-release.py
       - run: node scripts/self-scan-smoke.mjs
       - if: runner.os == 'Linux'
         run: node scripts/supervisor-smoke.mjs
@@ -57,7 +60,6 @@ jobs:
         run: ./scripts/windows-supervisor-smoke.ps1
         env:
           FERXIUM_SERVICE_BINARY: target/release/ferxium-service.exe
-      - run: python scripts/collect-release.py
       - if: runner.os == 'macOS'
         run: |
           ferxium_mount="$RUNNER_TEMP/ferxium-dmg"
@@ -70,6 +72,7 @@ jobs:
           FERXIUM_SERVICE_BINARY="$ferxium_mount/FerXium.app/Contents/MacOS/ferxium-service" node scripts/service-smoke.mjs
           FERXIUM_SERVICE_BINARY="$ferxium_mount/FerXium.app/Contents/MacOS/ferxium-service" node scripts/supervisor-smoke.mjs
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: release-${{ matrix.platform }}
           path: artifacts/release/*

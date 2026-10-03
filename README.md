@@ -6,7 +6,7 @@ FerXium combines **ferrum**, Latin for iron, with the **Xium** styling of NeXium
 
 A free, MIT-licensed, local-first antivirus project for Windows, Linux, and macOS. No telemetry, accounts, paid tiers, upgrade prompts, or sample uploads. Rust powers the engine and service; Tauri 2 and React power the desktop; Astro powers the static website.
 
-**Release status: 0.1.3 preview builds.** [Download Windows x64, Linux amd64, and macOS Apple silicon/Intel packages](https://ferxium.org/download/) or find them in [GitHub Releases](https://github.com/Mythrax-ZS/Ferxium/releases). Packages include the desktop, YARA-enabled service, and CLI. Windows builds have no publisher signature; macOS builds use ad-hoc integrity signatures without Developer ID or notarization.
+**Release status: 0.1.4 preview builds.** [Download Windows x64, Linux amd64, and macOS Apple silicon/Intel packages](https://ferxium.org/download/) or find them in [GitHub Releases](https://github.com/Mythrax-ZS/Ferxium/releases). Packages include the desktop, YARA-enabled service, and CLI. Windows builds have no publisher signature; macOS builds use ad-hoc integrity signatures without Developer ID or notarization.
 
 This repository implements working scanning, filesystem monitoring, encrypted quarantine, local IPC, and a complete UI. Bundled signatures include harmless tests and targeted published indicators, not a vetted production malware corpus. It has not been independently audited or certified. Keep existing endpoint protection while evaluating. The tagline expresses ambition; no antivirus guarantees unbreakable protection.
 
