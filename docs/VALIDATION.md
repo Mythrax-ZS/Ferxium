@@ -13,6 +13,7 @@ Validated locally on Windows with Rust 1.98.1, Node.js 24.16.0, MSVC native tool
 - Actual API route tests reject absent/wrong auth, browser Origin, oversized bodies, and invalid custom scan roots.
 - Cooperative shutdown rejects wrong authentication and browser Origins. Restart-monitor tests check bounded crash backoff and exclusive ownership.
 - Repeated scans count a known matching file each time while retaining one pending history report. The campaign service smoke requires the current scan's threat counter to be nonzero after watcher detection.
+- Canonical path aliases retain the same pending report ID, including native Windows path prefixes. Distinct hardlink names retain separate reports because removing one name does not contain the other. Report paths remain unchanged; comparison does not authorize filesystem actions.
 - Isolated daemon smoke: authenticated IPC → native watch → harmless YARA marker and RenEngine indicator fixture → quarantine → restore → delete backup → custom scan with campaign detection.
 - TypeScript/Astro diagnostics and production builds for both frontends.
 - Playwright: demo scan pause/resume/cancel and settings; phone navigation, honest downloads, FAQ; all six website pages.

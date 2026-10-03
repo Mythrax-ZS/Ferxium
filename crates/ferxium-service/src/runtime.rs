@@ -488,11 +488,25 @@ impl App {
         self.state.lock().unwrap().scan = Some(progress.clone());
     }
     pub(crate) fn record_outcome(&self, outcome: FileOutcome) -> bool {
+        // Native events, reconciliation and manual scans may use different
+        // aliases for one path (Windows verbatim prefixes, macOS /var).
+        // Normalize only for comparison: preserve the original report path and
+        // never turn this into permission to follow a symlink or delete a file.
+        let canonical = match &outcome {
+            FileOutcome::Detected { threat } => threat.path.canonicalize().ok(),
+            _ => None,
+        };
         let mut state = self.state.lock().unwrap();
         state.saved.scanned_total += 1;
         if let FileOutcome::Detected { threat } = outcome
             && !state.saved.threats.iter().any(|t| {
-                t.path == threat.path && t.sha256 == threat.sha256 && t.status == "pending"
+                t.sha256 == threat.sha256
+                    && t.status == "pending"
+                    && (t.path == threat.path
+                        || canonical.as_ref().is_some_and(|path| {
+                            storage::open_regular(&t.path).is_ok()
+                                && t.path.canonicalize().is_ok_and(|old| old == *path)
+                        }))
             })
         {
             state.saved.threats.insert(0, threat);
@@ -694,6 +708,25 @@ pub fn spawn_background(
 mod tests {
     use super::*;
     use ferxium_core::scanner::Md5Signature;
+
+    #[test]
+    fn path_aliases_keep_one_pending_id_but_distinct_hardlinks_keep_reports() {
+        let (dir, app, watched) = monitoring_fixture();
+        let file = watched.join("inert-alias.txt");
+        std::fs::write(&file, b"abc").unwrap();
+        let alias = dir.path().join("watched/../watched/inert-alias.txt");
+        let engine = app.engine.read().unwrap().clone();
+        assert!(app.record_outcome(engine.scan_file(&alias, &Config::default()).unwrap()));
+        let id = app.snapshot().unwrap().threats[0].id;
+        assert!(!app.record_outcome(engine.scan_file(&file, &Config::default()).unwrap()));
+        assert_eq!(app.snapshot().unwrap().threats.len(), 1);
+        assert_eq!(app.snapshot().unwrap().threats[0].id, id);
+        // Quarantining one hardlink does not remove another name: retain both.
+        let other = watched.join("inert-hardlink.txt");
+        std::fs::hard_link(&file, &other).unwrap();
+        assert!(app.record_outcome(engine.scan_file(&other, &Config::default()).unwrap()));
+        assert_eq!(app.snapshot().unwrap().threats.len(), 2);
+    }
 
     fn monitoring_fixture() -> (tempfile::TempDir, Arc<App>, PathBuf) {
         let dir = tempfile::tempdir().unwrap();
