@@ -1,15 +1,13 @@
 mod api;
 mod monitor;
 mod runtime;
+mod supervisor;
 
 use anyhow::{Context, Result};
 use clap::Parser;
 use ferxium_core::{Discovery, storage};
 use rand::RngCore;
-use std::{
-    fs::OpenOptions,
-    sync::{Arc, atomic::Ordering},
-};
+use std::sync::{Arc, atomic::Ordering};
 
 #[derive(Parser)]
 #[command(
@@ -22,6 +20,12 @@ struct Args {
     /// Override private state location for isolated development/tests.
     #[arg(long)]
     data_dir: Option<std::path::PathBuf>,
+    /// Keep a current-user worker running after abnormal exits.
+    #[arg(long, conflicts_with = "stop")]
+    supervise: bool,
+    /// Stop the current-user supervisor and service gracefully.
+    #[arg(long, conflicts_with = "supervise")]
+    stop: bool,
 }
 
 #[tokio::main]
@@ -36,12 +40,13 @@ async fn main() -> Result<()> {
     ferxium_core::privilege::require_regular_user()?;
     let data = args.data_dir.map(Ok).unwrap_or_else(storage::data_dir)?;
     storage::private_dir(&data)?;
-    let lock = OpenOptions::new()
-        .create(true)
-        .truncate(false)
-        .read(true)
-        .write(true)
-        .open(data.join("service.lock"))?;
+    if args.stop {
+        return supervisor::stop(&data).await;
+    }
+    if args.supervise {
+        return supervisor::run(data, args.port).await;
+    }
+    let lock = storage::lock_file(&data.join("service.lock"))?;
     fs2::FileExt::try_lock_exclusive(&lock)
         .context("Another FerXium service is already running")?;
     let app = Arc::new(runtime::App::load(data.clone())?);
@@ -66,8 +71,16 @@ async fn main() -> Result<()> {
     let monitor = runtime::spawn_background(app.clone(), tx, rx);
     tracing::info!("Local protection service ready (no remote access, no telemetry)");
     let router = api::router(app.clone(), token);
+    let shutdown_app = app.clone();
     let result = axum::serve(listener, router)
-        .with_graceful_shutdown(shutdown_signal())
+        .with_graceful_shutdown(async move {
+            tokio::select! {
+                _ = shutdown_signal() => {},
+                _ = async { while !shutdown_app.shutdown.load(Ordering::Acquire) {
+                    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+                }} => {},
+            }
+        })
         .await;
     app.shutdown.store(true, Ordering::Release);
     app.cancel_active();

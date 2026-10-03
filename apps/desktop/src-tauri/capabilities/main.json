@@ -8,6 +8,9 @@
     "dialog:allow-open",
     "dialog:allow-save",
     "allow-service-status",
-    "allow-service-action"
+    "allow-service-action",
+    "allow-desktop-preferences",
+    "allow-set-desktop-preference",
+    "allow-test-notification"
   ]
 }

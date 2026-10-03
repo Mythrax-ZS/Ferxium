@@ -11,19 +11,24 @@ Validated locally on Windows with Rust 1.98.1, Node.js 24.16.0, MSVC native tool
 - Encrypted quarantine, changed-file rejection, ciphertext tamper detection, missing-key protection, and non-overwriting restore.
 - Signed feed rejects forged keys, payload mutation, and replayed versions.
 - Actual API route tests reject absent/wrong auth, browser Origin, oversized bodies, and invalid custom scan roots.
+- Cooperative shutdown rejects wrong authentication and browser Origins. Restart-monitor tests check bounded crash backoff and exclusive ownership.
 - Repeated scans count a known matching file each time while retaining one pending history report. The campaign service smoke requires the current scan's threat counter to be nonzero after watcher detection.
 - Isolated daemon smoke: authenticated IPC → native watch → harmless YARA marker and RenEngine indicator fixture → quarantine → restore → delete backup → custom scan with campaign detection.
 - TypeScript/Astro diagnostics and production builds for both frontends.
 - Playwright: demo scan pause/resume/cancel and settings; phone navigation, honest downloads, FAQ; all six website pages.
+- Desktop alert policy tests check report deduplication, reviewed findings, burst summaries, filename privacy and control-character filtering. Browser background preferences keep host startup and native test notifications unavailable.
 - A fresh `npm ci` loads the local cache security backport through Astro; all 31 cache-reuse regression checks pass. `npm audit --audit-level=high` reports zero known vulnerabilities in its database checks. The local fork requires separate regression testing and review; see [backport provenance](../vendor/http-cache-semantics/BACKPORT.md).
 - Cargo audit reports zero vulnerabilities and three informational warnings, including Linux glib unsoundness; see [the dependency review](DEPENDENCY_REVIEW.md). These warnings remain release follow-up work.
 
 ## Native packages
 
+Version 0.1.4 adds a packaged supervisor smoke on all four release targets. It rejects a duplicate supervisor, checks direct child ownership before each of two deliberate worker crashes, requires rotated IPC tokens and resumed harmless YARA detection after each restart, then checks intentional shutdown does not restart. These tests use isolated private state and never print bearer tokens. Native graphical notification delivery and login behavior require OS integration checks; API acceptance cannot prove that the OS displayed a banner. See [background behavior and limits](BACKGROUND_PROTECTION.md).
+
 Version 0.1.3 adds deterministic recovery after a 2,048-file burst with an intentionally undelivered matching-file event, worker/queue bounds, debounce deadlines, priority fairness, Windows sharing-lock retries, file-identity replacement checks and partial-root availability. Packaged service smoke also verifies moved-in folders, degraded health while a root is missing and automatic recovery after recreation. See [monitoring validation and limits](REALTIME.md).
 
 - Windows: extracted the release NSIS payload and confirmed the desktop, service, and CLI executables are present. Ran the packaged service smoke test as a regular user.
 - Windows desktop 0.1.3: launched an isolated copy without the companion service, delivered native window-close and tray-click notifications, and verified the window hides while its process and tray survive. Verified tray reopening and restoration from a minimized state, then invoked the actual native tray Quit menu and checked a clean exit. macOS Dock reopening is compiled and checked by native macOS builds; it has not been exercised interactively from this workspace.
+- Windows desktop 0.1.4: launched with isolated state and its own YARA-enabled companion, verified background startup leaves the window hidden, created an inert marker and observed the native notification dispatch ledger while hidden, and checked repeated polling does not duplicate dispatch. A second manual launch exited cleanly and reopened the original window. Close/reopen, minimized restoration and actual tray Quit passed. This validates native dispatch, not OS banner delivery; login registration, real sign-in and graphical macOS/Linux notifications still need installed-system integration testing.
 - Linux: extracted the release Debian package into an isolated Ubuntu 24.04 environment. Checked its declared GTK/WebKit/AppIndicator/OpenSSL runtime dependencies and service library resolution, ran the CLI, and passed the packaged service smoke test as a regular user.
 - macOS: release CI mounts each DMG, verifies the app's ad-hoc code signature, checks service library linkage, runs the bundled CLI, and executes the packaged service smoke test on the native runner.
 

@@ -25,9 +25,21 @@ pub fn router(app: Arc<App>, token: String) -> Router {
     Router::new()
         .route("/v1/status", get(status))
         .route("/v1/action", post(action))
+        .route("/v1/shutdown", post(shutdown))
         .layer(DefaultBodyLimit::max(64 * 1024))
         .layer(middleware::from_fn_with_state(state.clone(), authenticate))
         .with_state(state)
+}
+
+async fn shutdown(State(state): State<ApiState>) -> StatusCode {
+    // Same bearer/Origin policy as every route. Only a local same-user client
+    // can request an intentional stop; the supervisor will not restart it.
+    state
+        .app
+        .shutdown
+        .store(true, std::sync::atomic::Ordering::Release);
+    state.app.cancel_active();
+    StatusCode::ACCEPTED
 }
 
 async fn authenticate(
@@ -91,7 +103,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let app = Arc::new(App::load(dir.path().to_path_buf()).unwrap());
         let router = router(app, "test-token".into());
-        for route in ["/v1/status", "/v1/action"] {
+        for route in ["/v1/status", "/v1/action", "/v1/shutdown"] {
             let response = router
                 .clone()
                 .oneshot(Request::builder().uri(route).body(Body::empty()).unwrap())
@@ -127,6 +139,40 @@ mod tests {
             router.oneshot(valid).await.unwrap().status(),
             StatusCode::OK
         );
+    }
+
+    #[tokio::test]
+    async fn shutdown_requires_valid_authentication_and_rejects_browser_origins() {
+        let dir = tempfile::tempdir().unwrap();
+        let app = Arc::new(App::load(dir.path().to_path_buf()).unwrap());
+        let routes = router(app.clone(), "test-token".into());
+        for (token, origin, expected) in [
+            ("wrong", None, StatusCode::UNAUTHORIZED),
+            (
+                "test-token",
+                Some("https://untrusted.example"),
+                StatusCode::FORBIDDEN,
+            ),
+            ("test-token", None, StatusCode::ACCEPTED),
+        ] {
+            let mut request = Request::builder()
+                .method("POST")
+                .uri("/v1/shutdown")
+                .header("authorization", format!("Bearer {token}"));
+            if let Some(origin) = origin {
+                request = request.header("origin", origin);
+            }
+            let response = routes
+                .clone()
+                .oneshot(request.body(Body::empty()).unwrap())
+                .await
+                .unwrap();
+            assert_eq!(response.status(), expected);
+            assert_eq!(
+                app.shutdown.load(std::sync::atomic::Ordering::Acquire),
+                expected == StatusCode::ACCEPTED
+            );
+        }
     }
 
     #[tokio::test]

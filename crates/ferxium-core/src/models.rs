@@ -164,6 +164,19 @@ pub struct Discovery {
     pub pid: u32,
 }
 
+/// Local supervisor heartbeat, separate from the worker's authenticated IPC.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SupervisionStatus {
+    pub id: Uuid,
+    pub pid: u32,
+    pub worker_pid: Option<u32>,
+    pub state: String,
+    pub restart_count: u64,
+    pub last_error: Option<String>,
+    pub updated_at: DateTime<Utc>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "action", rename_all = "snake_case")]
 pub enum Action {

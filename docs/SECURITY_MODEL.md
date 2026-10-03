@@ -10,9 +10,11 @@ The engine reads untrusted bytes but never executes them. Regular-file checks, n
 
 Only IPv4 loopback is bound. Each service instance rotates a 256-bit bearer token; a private discovery file communicates the ephemeral port to same-user Rust clients. Unix storage uses mode 0700/0600. Windows sets a protected ACL allowing the current SID and SYSTEM before writing secrets. A lock prevents multiple services from sharing the state.
 
-Every API route requires a bearer token. Browser `Origin` headers are rejected, there is no CORS support, no cookie or query-string auth, and JSON request bodies are limited to 64 KiB. Tauri's local main window receives only two allowlisted commands and native dialog permissions. Rust validates structured actions; the token never reaches frontend JavaScript. The webview has a restrictive CSP, no remote content, no shell plugin, and no general file API.
+Every API route requires a bearer token, including cooperative shutdown. Browser `Origin` headers are rejected, there is no CORS support, no cookie or query-string auth, and JSON request bodies are limited to 64 KiB. Tauri's local main window receives five allowlisted commands and native dialog permissions: status, structured actions, desktop preferences, boolean preference changes and a fixed test notification. Rust owns notification text and startup arguments; no generic notification, autostart, shell or filesystem plugin permission is granted to JavaScript. The token never reaches frontend JavaScript. The webview has a restrictive CSP and no remote content.
 
 This is a local same-user transport, not mutual service identity authentication. A same-user program can read discovery, impersonate the daemon, or alter config. Moving to a privileged service requires OS-backed peer identity and a different authorization design; a loopback bearer token is insufficient for that boundary.
+
+The current-user supervisor starts only its own executable and can forcibly stop only its owned child handle, never a discovery PID. Private generation IDs distinguish stop requests for successive supervisors. Heartbeat state is diagnostic, not a process-identity authorization source. The desktop polls from Rust while hidden, rereads discovery after worker restarts, bounds responses and serializes refreshes. Notifications omit full paths but expose a filename and detection name to the OS notification center. See [background operation](BACKGROUND_PROTECTION.md) for delivery and recovery limits.
 
 ## Detection and visibility
 

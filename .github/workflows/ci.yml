@@ -43,6 +43,7 @@ jobs:
         with:
           node-version: '24'
       - run: node scripts/service-smoke.mjs
+      - run: node scripts/supervisor-smoke.mjs
   frontend:
     runs-on: ubuntu-latest
     steps:
@@ -83,6 +84,7 @@ jobs:
       - run: npm run build -w @ferxium/desktop
       - run: node scripts/prepare-sidecars.mjs --build
       - run: cargo build --locked --release -p ferxium-desktop -p ferxium-service -p ferxium-cli
+      - run: cargo test --locked -p ferxium-desktop
       - uses: actions/upload-artifact@v4
         with:
           name: unsigned-source-preview-${{ matrix.os }}

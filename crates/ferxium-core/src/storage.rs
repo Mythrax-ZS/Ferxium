@@ -188,6 +188,40 @@ pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
     result
 }
 
+/// Open a regular lock file without following a final symlink/reparse point.
+/// The caller owns the advisory lock; this helper never truncates lock state.
+pub fn lock_file(path: &Path) -> Result<File> {
+    let mut options = OpenOptions::new();
+    options.create(true).truncate(false).read(true).write(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600).custom_flags(libc::O_NOFOLLOW);
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        use windows_sys::Win32::Storage::FileSystem::FILE_FLAG_OPEN_REPARSE_POINT;
+        options.custom_flags(FILE_FLAG_OPEN_REPARSE_POINT);
+    }
+    let file = options.open(path)?;
+    ensure!(file.metadata()?.is_file(), "Lock must be a regular file");
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::MetadataExt;
+        use windows_sys::Win32::Storage::FileSystem::FILE_ATTRIBUTE_REPARSE_POINT;
+        ensure!(
+            file.metadata()?.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT == 0,
+            "Reparse-point lock rejected"
+        );
+    }
+    ensure!(
+        !fs::symlink_metadata(path)?.file_type().is_symlink(),
+        "Symlink lock rejected"
+    );
+    Ok(file)
+}
+
 pub fn write_json<T: Serialize>(path: &Path, value: &T) -> Result<()> {
     let bytes = serde_json::to_vec_pretty(value)?;
     ensure!(bytes.len() <= 5 * 1024 * 1024, "JSON state exceeds limit");

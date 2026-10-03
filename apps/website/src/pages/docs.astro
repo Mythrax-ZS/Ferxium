@@ -50,9 +50,19 @@ import { sourceArchive, version } from '../data/site';
           Open FerXium from your application menu as your regular user. The desktop starts its
           bundled service automatically. Closing the window hides FerXium to the tray; click the
           tray icon or choose Open FerXium to reopen it. Use Quit desktop in the tray menu to exit
-          the UI explicitly while monitoring stays active. Stop ferxium-service before updating or
-          uninstalling; startup at login is optional and requires the per-user templates supplied in
-          the repository.
+          the UI explicitly while scanning and worker recovery stay active; native alerts stop when
+          the desktop exits. Enable optional Start at login in Settings to launch quietly in the
+          tray after sign-in. Disable that setting, close the desktop, and run
+          <code>ferxium-service --stop</code> before updating or uninstalling.
+        </p>
+        <p>
+          Settings also offers threat notifications and a test notification. New findings request
+          native alerts, including while the window is hidden. Focus modes and OS settings can
+          suppress banners. Alerts require review and do not automatically contain files. Read
+          <a href="https://github.com/Mythrax-ZS/Ferxium/blob/main/docs/BACKGROUND_PROTECTION.md">
+            background protection details
+          </a>
+          .
         </p>
       </section>
       <section id="build">

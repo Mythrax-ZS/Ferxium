@@ -4,7 +4,7 @@ After=default.target
 
 [Service]
 Type=simple
-ExecStart=%h/.local/bin/ferxium-service
+ExecStart=%h/.local/bin/ferxium-service --supervise
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true

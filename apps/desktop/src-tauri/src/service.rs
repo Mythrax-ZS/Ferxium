@@ -5,7 +5,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-pub fn start_companion() -> Result<(), Box<dyn std::error::Error>> {
+pub fn start_companion(data: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
     ferxium_core::privilege::require_regular_user()?;
     let executable = std::env::current_exe()?;
     let directory = executable
@@ -23,6 +23,9 @@ pub fn start_companion() -> Result<(), Box<dyn std::error::Error>> {
     }
     let mut command = Command::new(service);
     command
+        .arg("--supervise")
+        .arg("--data-dir")
+        .arg(data)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());

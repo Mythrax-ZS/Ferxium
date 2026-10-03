@@ -14,6 +14,8 @@ Version 0.1.2 adds four published legacy hash indicators and five static rules f
 
 Version 0.1.3 adds automatic watched-folder recovery, bounded scan workers, transient-read retries and explicit monitoring health. See [real-time behavior, tests and limits](docs/REALTIME.md).
 
+Version 0.1.4 adds native threat notifications while in the tray, optional current-user login startup, and a separate watchdog that restarts crashed scanning workers. See [background protection and its limits](docs/BACKGROUND_PROTECTION.md).
+
 ## Monorepo
 
 ```text
@@ -40,6 +42,9 @@ Version 0.1.3 adds automatic watched-folder recovery, bounded scan workers, tran
 flowchart LR
   UI[React desktop UI] -->|allowlisted Tauri commands| Bridge[Tauri Rust bridge]
   Bridge -->|loopback HTTP + private bearer token| Service[Per-user Rust service]
+  Agent[Native desktop alert poller] --> Service
+  Agent --> Alerts[OS notifications]
+  Supervisor[Current-user restart monitor] -->|owned worker process| Service
   CLI[Rust CLI] -->|authenticated status| Service
   CLI --> Core[ferxium-core]
   Service --> Core
@@ -69,7 +74,7 @@ In a second terminal:
 npm run tauri -- dev
 ```
 
-The service watches existing `Downloads` and `Desktop` folders by default. Configure additional absolute paths in Settings. Closing the main window hides FerXium to the system tray. Click the tray icon or choose **Open FerXium** to reopen it. Choose **Quit desktop (service stays active)** from the tray menu to exit the UI explicitly. Stop a foreground service with Ctrl+C.
+The service watches existing `Downloads` and `Desktop` folders by default. Configure additional absolute paths in Settings. Closing the main window hides FerXium to the system tray and keeps native notifications active. Click the tray icon or choose **Open FerXium** to reopen it. Choose **Quit desktop (service stays active)** from the tray menu to exit the UI explicitly; alerts stop, while scanning and recovery continue. Installed releases offer optional **Start at login** in Settings. Stop a foreground service with Ctrl+C; close the desktop and run `ferxium-service --stop` before updating a supervised installation.
 
 For browser previews (explicitly labeled illustrative demos):
 
@@ -112,7 +117,7 @@ The service exposes `yara_enabled`; the dashboard accurately shows when it is ab
 | UI                 | Five sections, live status, reports, activity, native folder/save dialogs, tray quick actions, themes                                                     |
 | Website            | Six responsive static pages, accessible navigation/FAQ, local fonts, SEO, truthful release placeholders                                                   |
 
-Memory scanning, pre-execution blocking, archive inspection, robust missed-event recovery, tamper resistance, and privileged system protection are not implemented. Full scans skip special files, symlinks, excluded locations, application state, Linux pseudo filesystems, and files above the configured limit. Read errors are counted. Quick scanning covers common locations, not every browser profile or startup mechanism. See [the roadmap](docs/ROADMAP.md).
+Memory scanning, pre-execution blocking, archive inspection, guaranteed lossless event coverage, tamper resistance, and privileged system protection are not implemented. Full scans skip special files, symlinks, excluded locations, application state, Linux pseudo filesystems, and files above the configured limit. Read errors are counted. Quick scanning covers common locations, not every browser profile or startup mechanism. See [the roadmap](docs/ROADMAP.md).
 
 ## Quarantine and recovery
 

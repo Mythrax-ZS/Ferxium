@@ -33,6 +33,7 @@ import { listen } from '@tauri-apps/api/event';
 import { getStatus, native, sendAction } from './api';
 import { demo } from './demo';
 import { protectionPresentation } from './health';
+import { DesktopSettings } from './DesktopSettings';
 import type { Action, Config, ScanKind, Status, Threat } from './types';
 
 type Page = 'Dashboard' | 'Scans' | 'Quarantine' | 'Settings' | 'History';
@@ -323,7 +324,7 @@ export default function App() {
             </div>
           </div>
           <span className="version">
-            FerXium v{status?.version ?? '0.1.3'} <span>MIT LICENSE</span>
+            FerXium v{status?.version ?? '0.1.4'} <span>MIT LICENSE</span>
           </span>
         </div>
       </aside>
@@ -759,6 +760,7 @@ export default function App() {
               )}
             </section>
           )}
+          {page === 'Settings' && <DesktopSettings />}
           {page === 'Settings' && status && (
             <Settings
               config={status.config}

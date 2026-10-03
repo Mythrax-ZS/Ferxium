@@ -88,6 +88,17 @@ test('website exposes honest downloads and working FAQ/navigation on a phone', a
   );
 });
 
+test('background preferences preview never registers login startup or sends OS notifications', async ({ page }) => {
+  await page.goto('http://127.0.0.1:1420');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  const panel = page.getByRole('region', { name: 'Background protection preferences' });
+  await expect(panel.getByRole('switch', { name: 'Start at login' })).toBeDisabled();
+  await expect(panel.getByRole('button', { name: 'Send test notification' })).toBeDisabled();
+  await panel.getByRole('switch', { name: 'Threat notifications' }).click();
+  await expect(panel.getByRole('switch', { name: 'Threat notifications' })).toHaveAttribute('aria-checked', 'false');
+  await expect(panel.getByRole('status')).toContainText('do not affect your computer');
+});
+
 test('every static page loads with a unique title and no browser exceptions', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));

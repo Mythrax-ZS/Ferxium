@@ -1,16 +1,13 @@
 //! The bearer token stays in Rust; it is never returned to the webview.
+use crate::background::DesktopAgent;
 use ferxium_core::{Action, Discovery, ServiceStatus, storage};
 
 async fn request(
     method: reqwest::Method,
     action: Option<Action>,
+    data: &std::path::Path,
 ) -> Result<reqwest::Response, String> {
-    let discovery: Discovery = storage::read_json(
-        &storage::data_dir()
-            .map_err(|e| e.to_string())?
-            .join("service.json"),
-    )
-    .map_err(|_| {
+    let discovery: Discovery = storage::read_json(&data.join("service.json")).map_err(|_| {
         "Protection service is offline. Start ferxium-service as your normal user.".to_string()
     })?;
     let client = reqwest::Client::builder()
@@ -43,20 +40,20 @@ async fn request(
 }
 
 #[tauri::command]
-pub async fn service_status() -> Result<ServiceStatus, String> {
-    request(reqwest::Method::GET, None)
-        .await?
-        .json()
-        .await
-        .map_err(|e| e.to_string())
+pub fn service_status(agent: tauri::State<'_, DesktopAgent>) -> Result<ServiceStatus, String> {
+    agent.snapshot()
 }
 
-pub async fn send_action(action: Action) -> Result<(), String> {
-    request(reqwest::Method::POST, Some(action)).await?;
+pub async fn send_action(data: &std::path::Path, action: Action) -> Result<(), String> {
+    request(reqwest::Method::POST, Some(action), data).await?;
     Ok(())
 }
 
 #[tauri::command]
-pub async fn service_action(action: Action) -> Result<(), String> {
-    send_action(action).await
+pub async fn service_action(
+    agent: tauri::State<'_, DesktopAgent>,
+    action: Action,
+) -> Result<(), String> {
+    send_action(&agent.data, action).await?;
+    agent.refresh().await
 }

@@ -11,6 +11,8 @@
 
 ## Before a stable release
 
+Version 0.1.4 implements optional current-user login startup, native tray-time threat alerts and process-exit recovery through an owned worker supervisor. See [behavior and remaining limits](BACKGROUND_PROTECTION.md). Hung-worker detection, coordinated upgrades and uninstall cleanup remain open.
+
 - Independent audit of file operations, ACLs, IPC, updater and native dependencies.
 - Vetted signature corpus, reproducible false-positive/detection benchmarks, licenses and feed ownership.
 - Handle-relative containment, platform file identity, journaled crash recovery, bounded disk quotas and quarantine recovery UI.

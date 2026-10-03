@@ -1,7 +1,7 @@
 import type { Status } from './types';
 const now = new Date().toISOString();
 export const demo: Status = {
-  version: '0.1.3',
+  version: '0.1.4',
   protection_enabled: true,
   watcher_active: true,
   watched_roots: ['C:\\Users\\You\\Downloads', 'C:\\Users\\You\\Desktop'],

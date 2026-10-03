@@ -1,4 +1,14 @@
-# FerXium 0.1.3 preview builds
+# FerXium 0.1.4 preview builds
+
+Adds native threat notifications while the desktop stays in the tray, optional
+current-user login startup and a separate supervisor that restarts crashed scan
+workers with bounded backoff. New IPC credentials are discovered after recovery.
+Settings includes alert controls, a test notification and restart-monitor status.
+Repeated pending reports are deduplicated; alert bursts are summarized and full
+paths omitted. OS Focus modes/settings can suppress banners. Explicitly quitting
+the desktop stops alerts; scanning and worker recovery continue. These additions
+do not prevent execution or automatically quarantine findings.
+See [background protection](https://github.com/Mythrax-ZS/Ferxium/blob/main/docs/BACKGROUND_PROTECTION.md).
 
 Adds automatic watched-folder reconciliation after missed events, bounded
 foreground workers, retries for transient file-read failures, watch-root recovery
@@ -21,8 +31,10 @@ Process monitoring establishes a startup baseline so existing executables do not
 delay watched-file events. Quick Scan checks processes already running.
 
 These packages include the desktop, current-user protection service, and CLI.
-Opening the installed desktop starts the bundled service without administrator
-privileges. Close an earlier service instance before replacing an installation.
+Opening the installed desktop starts the bundled supervisor and worker without
+administrator privileges. Before updating or uninstalling, disable login startup,
+close the desktop and run the installed ferxium-service executable with --stop.
+An earlier standalone worker keeps its lock until stopped; do not overwrite it.
 Closing the window hides FerXium to the tray while monitoring stays active.
 Click its tray icon or choose Open FerXium to reopen it. Quit desktop from the
 tray menu exits the UI explicitly and leaves the protection service active.
