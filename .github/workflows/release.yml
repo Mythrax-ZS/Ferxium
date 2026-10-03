@@ -49,10 +49,14 @@ jobs:
       - run: cargo test --locked -p ferxium-core --features yara-engine
       - run: npm run tauri -- build --bundles ${{ matrix.bundle }} --ci
       - run: node scripts/self-scan-smoke.mjs
-      - if: runner.os != 'macOS'
+      - if: runner.os == 'Linux'
         run: node scripts/supervisor-smoke.mjs
         env:
-          FERXIUM_SERVICE_BINARY: target/release/ferxium-service${{ runner.os == 'Windows' && '.exe' || '' }}
+          FERXIUM_SERVICE_BINARY: target/release/ferxium-service
+      - if: runner.os == 'Windows'
+        run: ./scripts/windows-supervisor-smoke.ps1
+        env:
+          FERXIUM_SERVICE_BINARY: target/release/ferxium-service.exe
       - run: python scripts/collect-release.py
       - if: runner.os == 'macOS'
         run: |

@@ -99,7 +99,9 @@ node scripts/supervisor-smoke.mjs
 ```
 
 Native CI runs this against each platform's service, including the service
-inside both macOS DMGs. Desktop Rust tests cover report deduplication, reviewed
+inside both macOS DMGs. The Windows GitHub runner uses a temporary standard
+account because the service deliberately rejects elevated tokens.
+Desktop Rust tests cover report deduplication, reviewed
 findings, burst summaries and filename privacy. Browser tests ensure preview
 controls cannot configure host startup or send native notifications. These
 checks do not establish malware detection efficacy or guarantee OS delivery.
