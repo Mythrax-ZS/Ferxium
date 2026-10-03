@@ -30,6 +30,8 @@ serialization and 304 revalidation, with allowed-cache behavior as controls.
 They exercise the dependency loaded from Astro and assert its identity against
 this reviewed copy, so an ignored override cannot produce a passing check.
 Eighteen cases fail against the original 4.2.0 implementation.
+The patched implementation also passed all 125 upstream compatibility tests
+from commit `f01112e954b83cfa8765b633ba880e5e980aa54c` during local validation.
 
 Once an upstream fixed release is available, move the behavioral regressions
 to the project's tests directory and update the dependency identity assertion
